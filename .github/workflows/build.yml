@@ -28,8 +28,14 @@ jobs:
           npm install -g cordova
           cordova create cordova-app com.example.itticketing ITTicketingApp
           
-          # Copy repository web files into Cordova www directory
-          rsync -av --exclude='cordova-app' --exclude='.github' --exclude='.git' ./ cordova-app/www/
+          # Remove default template files
+          rm -rf cordova-app/www/*
+          
+          # Copy web frontend files (index.html, CSS, JS, assets) into www/
+          cp -r index.html *.css *.js assets/ cordova-app/www/ 2>/dev/null || cp -r index.html *.css *.js cordova-app/www/ 2>/dev/null || cp -r * cordova-app/www/ 2>/dev/null
+          
+          # Remove gradle artifacts if copied
+          rm -rf cordova-app/www/cordova-app cordova-app/www/.github cordova-app/www/app cordova-app/www/*.gradle*
           
           cd cordova-app
           cordova platform add android
