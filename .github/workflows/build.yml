@@ -28,25 +28,16 @@ jobs:
           npm install -g cordova
           cordova create cordova-app com.example.itticketing ITTicketingApp
           
-          # Empty default Cordova web directory
+          # Clear default Cordova web assets
           rm -rf cordova-app/www/*
 
-          # Find where index.html lives and copy its parent folder contents to www/
-          INDEX_PATH=$(find . -maxdepth 3 -name "index.html" -not -path "*/cordova-app/*" | head -n 1)
-          
-          if [ -n "$INDEX_PATH" ]; then
-            WEB_DIR=$(dirname "$INDEX_PATH")
-            echo "Found web content directory at: $WEB_DIR"
-            cp -r $WEB_DIR/* cordova-app/www/
-          else
-            echo "No index.html found directly; copying repository root..."
-            cp -r * cordova-app/www/ 2>/dev/null || true
-          fi
+          # Copy web frontend files directly into Cordova www folder
+          cp index.html cordova-app/www/ 2>/dev/null || true
+          cp -r assets cordova-app/www/ 2>/dev/null || true
+          cp *.css cordova-app/www/ 2>/dev/null || true
+          cp *.js cordova-app/www/ 2>/dev/null || true
 
-          # Clean build artifacts out of www/
-          rm -rf cordova-app/www/cordova-app cordova-app/www/.github cordova-app/www/.git cordova-app/www/app
-
-          # Configure Cordova scheme settings
+          # Configure Cordova scheme preferences
           cd cordova-app
           sed -i 's|</widget>|<preference name="AndroidInsecureFileModeEnabled" value="true" /><preference name="Scheme" value="file" /><preference name="Hostname" value="localhost" /></widget>|' config.xml
 
