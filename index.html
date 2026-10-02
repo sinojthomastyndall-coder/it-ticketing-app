@@ -9,14 +9,14 @@
         body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
     </style>
 </head>
-<body class="p-4 min-h-screen">
+<body class="p-4 min-h-screen pb-12">
     <!-- Header -->
     <div class="flex items-center justify-between border-b border-slate-700 pb-4 mb-6">
         <div>
             <h1 class="text-2xl font-bold text-indigo-400">DeskPulse</h1>
             <p class="text-xs text-slate-400">IT Support Dashboard</p>
         </div>
-        <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow">
+        <button onclick="openCreateModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow">
             + New Ticket
         </button>
     </div>
@@ -24,109 +24,177 @@
     <!-- Stats Overview -->
     <div class="grid grid-cols-3 gap-3 mb-6 text-center">
         <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
-            <span class="block text-2xl font-bold text-amber-400" id="stat-open">2</span>
+            <span class="block text-2xl font-bold text-amber-400" id="stat-open">0</span>
             <span class="text-xs text-slate-400">Open</span>
         </div>
         <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
-            <span class="block text-2xl font-bold text-blue-400" id="stat-progress">1</span>
+            <span class="block text-2xl font-bold text-blue-400" id="stat-progress">0</span>
             <span class="text-xs text-slate-400">In Progress</span>
         </div>
         <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
-            <span class="block text-2xl font-bold text-emerald-400" id="stat-resolved">1</span>
+            <span class="block text-2xl font-bold text-emerald-400" id="stat-resolved">0</span>
             <span class="text-xs text-slate-400">Resolved</span>
         </div>
     </div>
 
     <!-- Ticket List -->
-    <div id="ticket-list" class="space-y-3">
-        <!-- Sample Ticket 1 -->
-        <div class="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow-sm">
-            <div class="flex justify-between items-start mb-2">
-                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">OPEN</span>
-                <span class="text-xs text-slate-400">#TK-1002</span>
-            </div>
-            <h3 class="font-semibold text-slate-100 mb-1">VPN Disconnecting Frequently</h3>
-            <p class="text-xs text-slate-400 mb-3">User reports remote connection drops every 10 minutes on home network.</p>
-            <div class="flex justify-between items-center text-xs text-slate-400 pt-2 border-t border-slate-700/50">
-                <span>Assignee: <strong class="text-slate-200">Sinoj Thomas</strong></span>
-                <span class="text-rose-400 font-medium">High</span>
-            </div>
-        </div>
+    <div id="ticket-list" class="space-y-3"></div>
 
-        <!-- Sample Ticket 2 -->
-        <div class="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow-sm">
-            <div class="flex justify-between items-start mb-2">
-                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">IN PROGRESS</span>
-                <span class="text-xs text-slate-400">#TK-1001</span>
-            </div>
-            <h3 class="font-semibold text-slate-100 mb-1">New Monitor Setup Needed</h3>
-            <p class="text-xs text-slate-400 mb-3">Dual-monitor display configuration required for Desk B-12.</p>
-            <div class="flex justify-between items-center text-xs text-slate-400 pt-2 border-t border-slate-700/50">
-                <span>Assignee: <strong class="text-slate-200">Sinoj Thomas</strong></span>
-                <span class="text-slate-300 font-medium">Medium</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- New Ticket Modal -->
-    <div id="modal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 w-full max-w-md">
-            <h2 class="text-lg font-bold text-slate-100 mb-4">Create New Ticket</h2>
+    <!-- Create/Edit Ticket Modal -->
+    <div id="modal" class="fixed inset-0 bg-black/75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 w-full max-w-md shadow-xl">
+            <h2 class="text-lg font-bold text-slate-100 mb-4" id="modal-title">Create Ticket</h2>
             
+            <input type="hidden" id="t-id">
+
             <label class="block text-xs text-slate-400 mb-1">Subject</label>
             <input type="text" id="t-subject" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 mb-3 focus:outline-none focus:border-indigo-500">
 
             <label class="block text-xs text-slate-400 mb-1">Description</label>
             <textarea id="t-desc" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 mb-3 focus:outline-none focus:border-indigo-500"></textarea>
 
-            <label class="block text-xs text-slate-400 mb-1">Priority</label>
-            <select id="t-priority" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 mb-5 focus:outline-none focus:border-indigo-500">
-                <option value="Low">Low</option>
-                <option value="Medium" selected>Medium</option>
-                <option value="High">High</option>
-            </select>
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Status</label>
+                    <select id="t-status" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <option value="OPEN">OPEN</option>
+                        <option value="IN PROGRESS">IN PROGRESS</option>
+                        <option value="RESOLVED">RESOLVED</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Priority</label>
+                    <select id="t-priority" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                    </select>
+                </div>
+            </div>
 
-            <div class="flex justify-end gap-2">
-                <button onclick="closeModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-xs font-semibold rounded text-slate-300">Cancel</button>
-                <button onclick="addTicket()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold rounded text-white">Create Ticket</button>
+            <label class="block text-xs text-slate-400 mb-1">Assignee</label>
+            <input type="text" id="t-assignee" value="Sinoj Thomas" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 mb-5 focus:outline-none focus:border-indigo-500">
+
+            <div class="flex justify-between items-center">
+                <button id="btn-delete" onclick="deleteTicket()" class="px-3 py-2 bg-rose-600/20 text-rose-400 hover:bg-rose-600 hover:text-white border border-rose-500/30 text-xs font-semibold rounded hidden">Delete</button>
+                <div class="flex gap-2 ml-auto">
+                    <button onclick="closeModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-xs font-semibold rounded text-slate-300">Cancel</button>
+                    <button onclick="saveTicket()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold rounded text-white">Save Ticket</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        function openModal() { document.getElementById('modal').classList.remove('hidden'); }
-        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+        let tickets = JSON.parse(localStorage.getItem('deskpulse_tickets')) || [
+            { id: 'TK-3232', subject: 'Software Installation', desc: 'VLC', status: 'OPEN', priority: 'Medium', assignee: 'Sinoj Thomas' },
+            { id: 'TK-1002', subject: 'VPN Disconnecting Frequently', desc: 'User reports remote connection drops every 10 minutes on home network.', status: 'OPEN', priority: 'High', assignee: 'Sinoj Thomas' },
+            { id: 'TK-1001', subject: 'New Monitor Setup Needed', desc: 'Dual-monitor display configuration required for Desk B-12.', status: 'IN PROGRESS', priority: 'Medium', assignee: 'Sinoj Thomas' }
+        ];
 
-        function addTicket() {
-            const subject = document.getElementById('t-subject').value;
-            const desc = document.getElementById('t-desc').value;
-            const priority = document.getElementById('t-priority').value;
+        function render() {
+            localStorage.setItem('deskpulse_tickets', JSON.stringify(tickets));
+            const container = document.getElementById('ticket-list');
+            container.innerHTML = '';
 
-            if(!subject) return alert("Please enter a subject");
+            let openCount = 0, progressCount = 0, resolvedCount = 0;
 
-            const id = 'TK-' + Math.floor(1000 + Math.random() * 9000);
-            const ticketHTML = `
-                <div class="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow-sm">
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">OPEN</span>
-                        <span class="text-xs text-slate-400">#${id}</span>
+            tickets.forEach(t => {
+                if(t.status === 'OPEN') openCount++;
+                if(t.status === 'IN PROGRESS') progressCount++;
+                if(t.status === 'RESOLVED') resolvedCount++;
+
+                let badgeClass = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+                if(t.status === 'IN PROGRESS') badgeClass = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+                if(t.status === 'RESOLVED') badgeClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+
+                const card = `
+                    <div onclick="openEditModal('${t.id}')" class="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow-sm active:bg-slate-750 cursor-pointer">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded border ${badgeClass}">${t.status}</span>
+                            <span class="text-xs text-slate-400">#${t.id}</span>
+                        </div>
+                        <h3 class="font-semibold text-slate-100 mb-1">${t.subject}</h3>
+                        <p class="text-xs text-slate-400 mb-3">${t.desc || 'No description provided.'}</p>
+                        <div class="flex justify-between items-center text-xs text-slate-400 pt-2 border-t border-slate-700/50">
+                            <span>Assignee: <strong class="text-slate-200">${t.assignee}</strong></span>
+                            <span class="${t.priority === 'High' ? 'text-rose-400' : 'text-slate-300'} font-medium">${t.priority}</span>
+                        </div>
                     </div>
-                    <h3 class="font-semibold text-slate-100 mb-1">${subject}</h3>
-                    <p class="text-xs text-slate-400 mb-3">${desc}</p>
-                    <div class="flex justify-between items-center text-xs text-slate-400 pt-2 border-t border-slate-700/50">
-                        <span>Assignee: <strong class="text-slate-200">Sinoj Thomas</strong></span>
-                        <span class="${priority === 'High' ? 'text-rose-400' : 'text-slate-300'} font-medium">${priority}</span>
-                    </div>
-                </div>
-            `;
+                `;
+                container.insertAdjacentHTML('beforeend', card);
+            });
 
-            document.getElementById('ticket-list').insertAdjacentHTML('afterbegin', ticketHTML);
-            document.getElementById('stat-open').innerText = parseInt(document.getElementById('stat-open').innerText) + 1;
+            document.getElementById('stat-open').innerText = openCount;
+            document.getElementById('stat-progress').innerText = progressCount;
+            document.getElementById('stat-resolved').innerText = resolvedCount;
+        }
 
+        function openCreateModal() {
+            document.getElementById('modal-title').innerText = "Create Ticket";
+            document.getElementById('t-id').value = '';
             document.getElementById('t-subject').value = '';
             document.getElementById('t-desc').value = '';
-            closeModal();
+            document.getElementById('t-status').value = 'OPEN';
+            document.getElementById('t-priority').value = 'Medium';
+            document.getElementById('t-assignee').value = 'Sinoj Thomas';
+            document.getElementById('btn-delete').classList.add('hidden');
+            document.getElementById('modal').classList.remove('hidden');
         }
+
+        function openEditModal(id) {
+            const t = tickets.find(item => item.id === id);
+            if(!t) return;
+
+            document.getElementById('modal-title').innerText = "Edit Ticket #" + t.id;
+            document.getElementById('t-id').value = t.id;
+            document.getElementById('t-subject').value = t.subject;
+            document.getElementById('t-desc').value = t.desc;
+            document.getElementById('t-status').value = t.status;
+            document.getElementById('t-priority').value = t.priority;
+            document.getElementById('t-assignee').value = t.assignee || 'Sinoj Thomas';
+            document.getElementById('btn-delete').classList.remove('hidden');
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        function saveTicket() {
+            const id = document.getElementById('t-id').value;
+            const subject = document.getElementById('t-subject').value.trim();
+            const desc = document.getElementById('t-desc').value.trim();
+            const status = document.getElementById('t-status').value;
+            const priority = document.getElementById('t-priority').value;
+            const assignee = document.getElementById('t-assignee').value.trim() || 'Sinoj Thomas';
+
+            if(!subject) return alert("Please enter a subject.");
+
+            if(id) {
+                const index = tickets.findIndex(t => t.id === id);
+                if(index !== -1) {
+                    tickets[index] = { id, subject, desc, status, priority, assignee };
+                }
+            } else {
+                const newId = 'TK-' + Math.floor(1000 + Math.random() * 9000);
+                tickets.unshift({ id: newId, subject, desc, status, priority, assignee });
+            }
+
+            closeModal();
+            render();
+        }
+
+        function deleteTicket() {
+            const id = document.getElementById('t-id').value;
+            if(confirm("Are you sure you want to delete this ticket?")) {
+                tickets = tickets.filter(t => t.id !== id);
+                closeModal();
+                render();
+            }
+        }
+
+        render();
     </script>
 </body>
 </html>
