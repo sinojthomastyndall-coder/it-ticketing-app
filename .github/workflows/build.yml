@@ -9,7 +9,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -17,16 +18,25 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          gradle-version: '8.4'
+          node-version: '20'
 
-      - name: Build Debug APK
-        run: gradle assembleDebug
+      - name: Install Cordova & Build APK
+        run: |
+          npm install -g cordova
+          cordova create cordova-app com.example.itticketing ITTicketingApp
+          
+          # Copy repository web files into Cordova www directory
+          rsync -av --exclude='cordova-app' --exclude='.github' --exclude='.git' ./ cordova-app/www/
+          
+          cd cordova-app
+          cordova platform add android
+          cordova build android --debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: IT-Ticketing-App
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: cordova-app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
