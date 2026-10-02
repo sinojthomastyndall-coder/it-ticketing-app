@@ -31,13 +31,18 @@ jobs:
           # Clean default Cordova web files
           rm -rf cordova-app/www/*
 
-          # Copy web app content safely
-          mkdir -p build_assets
-          cp -r * build_assets/ 2>/dev/null || true
-          rm -rf build_assets/cordova-app build_assets/.github build_assets/.git build_assets/app build_assets/*.gradle* build_assets/*.kts
-          cp -r build_assets/* cordova-app/www/
+          # Safely copy repo files to temporary location
+          mkdir -p temp_www
+          cp -r * temp_www/ 2>/dev/null || true
+          rm -rf temp_www/cordova-app temp_www/.github temp_www/.git temp_www/app temp_www/*.gradle* temp_www/*.kts
+          
+          # Copy remaining web assets to Cordova www
+          cp -r temp_www/* cordova-app/www/
 
+          # Configure Cordova config.xml to use file scheme instead of https://localhost
           cd cordova-app
+          sed -i 's|</widget>|<preference name="AndroidInsecureFileModeEnabled" value="true" /><preference name="Scheme" value="file" /><preference name="Hostname" value="localhost" /></widget>|' config.xml
+
           cordova platform add android
           cordova build android --debug
 
