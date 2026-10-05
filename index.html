@@ -10,7 +10,6 @@
         .modal-animate { transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out; }
         .card-transition { transition: all 0.2s ease-in-out; }
         .card-transition:active { transform: scale(0.98); }
-        .sub-field-animate { transition: all 0.3s ease-in-out; }
     </style>
 </head>
 <body class="p-4 min-h-screen pb-12">
@@ -64,7 +63,7 @@
                 <option value="Others">Others</option>
             </select>
 
-            <!-- Dynamic Sub-field: Laptop Size -->
+            <!-- Dynamic Sub-field: Laptop Size (Appears when New Laptop is selected) -->
             <div id="wrapper-laptop-size" class="hidden mb-3">
                 <label class="block text-xs text-indigo-400 mb-1 font-semibold">Laptop Size</label>
                 <select id="t-laptop-size" class="w-full bg-slate-900 border border-indigo-500/50 rounded p-2 text-sm text-slate-200 focus:outline-none">
@@ -74,16 +73,28 @@
                 </select>
             </div>
 
-            <!-- Dynamic Sub-field: Desk Settings -->
+            <!-- Dynamic Sub-field: Desk Settings Accessories -->
             <div id="wrapper-desk-settings" class="hidden mb-3">
                 <label class="block text-xs text-indigo-400 mb-1 font-semibold">Desk Accessories</label>
-                <select id="t-desk-settings" class="w-full bg-slate-900 border border-indigo-500/50 rounded p-2 text-sm text-slate-200 focus:outline-none">
+                <select id="t-desk-settings" onchange="handleDeskSettingsChange()" class="w-full bg-slate-900 border border-indigo-500/50 rounded p-2 text-sm text-slate-200 focus:outline-none">
                     <option value="How many Dock Screens">How many Dock Screens</option>
                     <option value="How many Normal Screens">How many Normal Screens</option>
                     <option value="Keyboard & Mouse">Keyboard & Mouse</option>
                     <option value="Webcam">Webcam</option>
                     <option value="Wireless Headphones">Wireless Headphones</option>
                     <option value="Wireless Keyboard & Mouse">Wireless Keyboard & Mouse</option>
+                </select>
+            </div>
+
+            <!-- Dynamic Sub-field: Desk Quantity / Details -->
+            <div id="wrapper-desk-qty" class="hidden mb-3">
+                <label class="block text-xs text-indigo-400 mb-1 font-semibold" id="lbl-desk-qty">Quantity / Count</label>
+                <select id="t-desk-qty" class="w-full bg-slate-900 border border-indigo-500/50 rounded p-2 text-sm text-slate-200 focus:outline-none">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5+">5+</option>
                 </select>
             </div>
 
@@ -135,8 +146,8 @@
 
     <script>
         let tickets = JSON.parse(localStorage.getItem('my_jobs_to_do_tickets')) || [
-            { id: 'TK-3232', subject: 'Software Installation', subOption: '', location: 'Main Office', desc: '• Install VLC Media Player\n• Setup default video associations', status: 'OPEN', priority: 'Medium', assignee: 'Sinoj Thomas' },
-            { id: 'TK-1002', subject: 'Laptop Intune', subOption: '14 Inch', location: 'Lab 2B', desc: '• Enroll user device into Intune\n• Verify company portal access', status: 'OPEN', priority: 'High', assignee: 'Sinoj Thomas' }
+            { id: 'TK-3232', subject: 'Software Installation', subOption: '', qtyOption: '', location: 'Main Office', desc: '• Install VLC Media Player\n• Setup default video associations', status: 'OPEN', priority: 'Medium', assignee: 'Sinoj Thomas' },
+            { id: 'TK-1002', subject: 'New Laptop', subOption: '14 Inch', qtyOption: '', location: 'Lab 2B', desc: '• Prepare device setup\n• Verify company portal access', status: 'OPEN', priority: 'High', assignee: 'Sinoj Thomas' }
         ];
 
         function render() {
@@ -160,7 +171,12 @@
                     .map(line => `<div class="text-xs text-slate-300">${line}</div>`)
                     .join('');
 
-                const subTag = t.subOption ? `<span class="ml-2 text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30">${t.subOption}</span>` : '';
+                let subDetail = t.subOption || '';
+                if(t.qtyOption) {
+                    subDetail += subDetail ? ` (${t.qtyOption})` : t.qtyOption;
+                }
+
+                const subTag = subDetail ? `<span class="ml-2 text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30">${subDetail}</span>` : '';
 
                 const card = `
                     <div onclick="openEditModal('${t.id}')" class="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow-sm card-transition cursor-pointer hover:border-slate-600">
@@ -191,14 +207,30 @@
             const subject = document.getElementById('t-subject').value;
             const laptopWrapper = document.getElementById('wrapper-laptop-size');
             const deskWrapper = document.getElementById('wrapper-desk-settings');
+            const qtyWrapper = document.getElementById('wrapper-desk-qty');
 
             laptopWrapper.classList.add('hidden');
             deskWrapper.classList.add('hidden');
+            qtyWrapper.classList.add('hidden');
 
-            if (subject === 'Laptop Intune') {
+            if (subject === 'New Laptop') {
                 laptopWrapper.classList.remove('hidden');
             } else if (subject === 'Desk Settings') {
                 deskWrapper.classList.remove('hidden');
+                handleDeskSettingsChange();
+            }
+        }
+
+        function handleDeskSettingsChange() {
+            const deskSetting = document.getElementById('t-desk-settings').value;
+            const qtyWrapper = document.getElementById('wrapper-desk-qty');
+            const lblQty = document.getElementById('lbl-desk-qty');
+
+            if (deskSetting.includes('How many') || deskSetting === 'Keyboard & Mouse' || deskSetting === 'Webcam' || deskSetting === 'Wireless Headphones' || deskSetting === 'Wireless Keyboard & Mouse') {
+                qtyWrapper.classList.remove('hidden');
+                lblQty.innerText = deskSetting.includes('How many') ? 'Select Quantity' : 'Quantity / Options';
+            } else {
+                qtyWrapper.classList.add('hidden');
             }
         }
 
@@ -240,10 +272,14 @@
             
             handleSubjectChange();
 
-            if (t.subject === 'Laptop Intune') {
+            if (t.subject === 'New Laptop') {
                 document.getElementById('t-laptop-size').value = t.subOption || '13 Inch';
             } else if (t.subject === 'Desk Settings') {
                 document.getElementById('t-desk-settings').value = t.subOption || 'How many Dock Screens';
+                handleDeskSettingsChange();
+                if (t.qtyOption) {
+                    document.getElementById('t-desk-qty').value = t.qtyOption;
+                }
             }
 
             document.getElementById('t-location').value = t.location || '';
@@ -274,20 +310,26 @@
             const assignee = document.getElementById('t-assignee').value.trim() || 'Sinoj Thomas';
 
             let subOption = '';
-            if (subject === 'Laptop Intune') {
+            let qtyOption = '';
+
+            if (subject === 'New Laptop') {
                 subOption = document.getElementById('t-laptop-size').value;
             } else if (subject === 'Desk Settings') {
                 subOption = document.getElementById('t-desk-settings').value;
+                const qtyWrapper = document.getElementById('wrapper-desk-qty');
+                if (!qtyWrapper.classList.contains('hidden')) {
+                    qtyOption = document.getElementById('t-desk-qty').value;
+                }
             }
 
             if(id) {
                 const index = tickets.findIndex(t => t.id === id);
                 if(index !== -1) {
-                    tickets[index] = { id, subject, subOption, location, desc, status, priority, assignee };
+                    tickets[index] = { id, subject, subOption, qtyOption, location, desc, status, priority, assignee };
                 }
             } else {
                 const newId = 'TK-' + Math.floor(1000 + Math.random() * 9000);
-                tickets.unshift({ id: newId, subject, subOption, location, desc, status, priority, assignee });
+                tickets.unshift({ id: newId, subject, subOption, qtyOption, location, desc, status, priority, assignee });
             }
 
             closeModal();
