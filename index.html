@@ -50,6 +50,10 @@
             
             <input type="hidden" id="t-id">
 
+            <!-- End User Name -->
+            <label class="block text-xs text-slate-400 mb-1">End User Name</label>
+            <input type="text" id="t-end-user" placeholder="e.g. John Doe" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 mb-3 focus:outline-none focus:border-indigo-500 transition-colors">
+
             <!-- Subject Dropdown -->
             <label class="block text-xs text-slate-400 mb-1">Subject</label>
             <select id="t-subject" onchange="handleSubjectChange()" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 mb-3 focus:outline-none focus:border-indigo-500 transition-colors">
@@ -123,17 +127,14 @@
                     <div>
                         <label class="block text-[11px] text-slate-400 mb-1">Block & Floor</label>
                         <select id="loc-block-floor" onchange="handleBlockChange()" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-                            <!-- Block A -->
                             <option value="AG (A Block - Ground Floor)">AG - A Block, Ground Floor</option>
                             <option value="A1 (A Block - 1st Floor)">A1 - A Block, 1st Floor</option>
                             <option value="A2 (A Block - 2nd Floor)">A2 - A Block, 2nd Floor</option>
                             <option value="A3 (A Block - 3rd Floor)">A3 - A Block, 3rd Floor</option>
-                            <!-- Block B -->
                             <option value="BG (B Block - Ground Floor)">BG - B Block, Ground Floor</option>
                             <option value="B1 (B Block - 1st Floor)">B1 - B Block, 1st Floor</option>
                             <option value="B2 (B Block - 2nd Floor)">B2 - B Block, 2nd Floor</option>
                             <option value="B3 (B Block - 3rd Floor)">B3 - B Block, 3rd Floor</option>
-                            <!-- Block C -->
                             <option value="CG (C Block - Ground Floor)">CG - C Block, Ground Floor</option>
                             <option value="C1 (C Block - 1st Floor)">C1 - C Block, 1st Floor</option>
                             <option value="C2 (C Block - 2nd Floor)">C2 - C Block, 2nd Floor</option>
@@ -141,7 +142,7 @@
                         </select>
                     </div>
 
-                    <!-- Dynamic Sub-field: Block A Section (Only shown when Block A selected) -->
+                    <!-- Block A Section -->
                     <div id="wrapper-section" class="hidden">
                         <label class="block text-[11px] text-indigo-400 mb-1 font-semibold">Block A Section</label>
                         <select id="loc-section" class="w-full bg-slate-900 border border-indigo-500/50 rounded p-1.5 text-xs text-slate-200 focus:outline-none">
@@ -156,13 +157,11 @@
                         <div>
                             <label class="block text-[11px] text-slate-400 mb-1">Room Number (0-50)</label>
                             <select id="loc-room" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-                                <!-- Populated dynamically 0-50 -->
                             </select>
                         </div>
                         <div>
                             <label class="block text-[11px] text-slate-400 mb-1">Seat Number (0-100)</label>
                             <select id="loc-seat" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-                                <!-- Populated dynamically 0-100 -->
                             </select>
                         </div>
                     </div>
@@ -229,15 +228,14 @@
         initLocationDropdowns();
 
         let tickets = JSON.parse(localStorage.getItem('my_jobs_to_do_tickets')) || [
-            { id: 'TK-3232', subject: 'Software Installation', subOption: '', deskItems: [], locBlockFloor: 'AG (A Block - Ground Floor)', locSection: 'Section 1', locRoom: 'Room 5', locSeat: 'Seat 12', desc: '• Install VLC Media Player\n• Setup default video associations', status: 'OPEN', priority: 'Medium', assignee: 'Sinoj Thomas' },
-            { id: 'TK-1002', subject: 'New Laptop', subOption: '14 Inch', deskItems: [], locBlockFloor: 'B1 (B Block - 1st Floor)', locSection: '', locRoom: 'Room 14', locSeat: 'Seat 3', desc: '• Prepare device setup\n• Verify company portal access', status: 'OPEN', priority: 'High', assignee: 'Sinoj Thomas' }
+            { id: 'TK-3232', endUser: 'Alex Smith', subject: 'Software Installation', subOption: '', deskItems: [], locBlockFloor: 'AG (A Block - Ground Floor)', locSection: 'Section 1', locRoom: 'Room 5', locSeat: 'Seat 12', desc: '• Install VLC Media Player\n• Setup default video associations', status: 'OPEN', priority: 'Medium', assignee: 'Sinoj Thomas' },
+            { id: 'TK-1002', endUser: 'Sarah Connor', subject: 'New Laptop', subOption: '14 Inch', deskItems: [], locBlockFloor: 'B1 (B Block - 1st Floor)', locSection: '', locRoom: 'Room 14', locSeat: 'Seat 3', desc: '• Prepare device setup\n• Verify company portal access', status: 'OPEN', priority: 'High', assignee: 'Sinoj Thomas' }
         ];
 
         function handleBlockChange() {
             const blockFloor = document.getElementById('loc-block-floor').value;
             const sectionWrapper = document.getElementById('wrapper-section');
 
-            // Show section dropdown ONLY for Block A options (AG, A1, A2, A3)
             if (blockFloor.startsWith('A')) {
                 sectionWrapper.classList.remove('hidden');
             } else {
@@ -282,6 +280,8 @@
                     locationStr = t.location;
                 }
 
+                const endUserStr = t.endUser ? `<p class="text-[11px] text-slate-400 mb-0.5">👤 End User: <span class="text-slate-200 font-medium">${t.endUser}</span></p>` : '';
+
                 const card = `
                     <div onclick="openEditModal('${t.id}')" class="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow-sm card-transition cursor-pointer hover:border-slate-600">
                         <div class="flex justify-between items-start mb-2">
@@ -291,6 +291,7 @@
                         <h3 class="font-semibold text-slate-100 mb-1 flex items-center flex-wrap">
                             ${t.subject} ${subTag}
                         </h3>
+                        ${endUserStr}
                         <p class="text-[11px] text-slate-400 mb-2">📍 Location: <span class="text-slate-300">${locationStr}</span></p>
                         <div class="space-y-0.5 mb-3">${formattedDesc}</div>
                         <div class="flex justify-between items-center text-xs text-slate-400 pt-2 border-t border-slate-700/50">
@@ -339,6 +340,7 @@
         function openCreateModal() {
             document.getElementById('modal-title').innerText = "Create Ticket";
             document.getElementById('t-id').value = '';
+            document.getElementById('t-end-user').value = '';
             document.getElementById('t-subject').value = 'Software Installation';
             
             document.getElementById('loc-block-floor').value = 'AG (A Block - Ground Floor)';
@@ -367,6 +369,7 @@
 
             document.getElementById('modal-title').innerText = "Edit Ticket #" + t.id;
             document.getElementById('t-id').value = t.id;
+            document.getElementById('t-end-user').value = t.endUser || '';
             document.getElementById('t-subject').value = t.subject;
             
             resetDeskAccessories();
@@ -407,6 +410,7 @@
 
         function saveTicket() {
             const id = document.getElementById('t-id').value;
+            const endUser = document.getElementById('t-end-user').value.trim();
             const subject = document.getElementById('t-subject').value;
             
             const locBlockFloor = document.getElementById('loc-block-floor').value;
@@ -444,11 +448,11 @@
             if(id) {
                 const index = tickets.findIndex(t => t.id === id);
                 if(index !== -1) {
-                    tickets[index] = { id, subject, subOption, deskItems, locBlockFloor, locSection, locRoom, locSeat, desc, status, priority, assignee };
+                    tickets[index] = { id, endUser, subject, subOption, deskItems, locBlockFloor, locSection, locRoom, locSeat, desc, status, priority, assignee };
                 }
             } else {
                 const newId = 'TK-' + Math.floor(1000 + Math.random() * 9000);
-                tickets.unshift({ id: newId, subject, subOption, deskItems, locBlockFloor, locSection, locRoom, locSeat, desc, status, priority, assignee });
+                tickets.unshift({ id: newId, endUser, subject, subOption, deskItems, locBlockFloor, locSection, locRoom, locSeat, desc, status, priority, assignee });
             }
 
             closeModal();
