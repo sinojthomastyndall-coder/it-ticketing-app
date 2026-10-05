@@ -63,7 +63,7 @@
                 <option value="Others">Others</option>
             </select>
 
-            <!-- Dynamic Sub-field: Laptop Size (Appears when New Laptop is selected) -->
+            <!-- Dynamic Sub-field: Laptop Size -->
             <div id="wrapper-laptop-size" class="hidden mb-3">
                 <label class="block text-xs text-indigo-400 mb-1 font-semibold">Laptop Size</label>
                 <select id="t-laptop-size" class="w-full bg-slate-900 border border-indigo-500/50 rounded p-2 text-sm text-slate-200 focus:outline-none">
@@ -122,7 +122,7 @@
                 <div class="space-y-2">
                     <div>
                         <label class="block text-[11px] text-slate-400 mb-1">Block & Floor</label>
-                        <select id="loc-block-floor" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <select id="loc-block-floor" onchange="handleBlockChange()" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
                             <!-- Block A -->
                             <option value="AG (A Block - Ground Floor)">AG - A Block, Ground Floor</option>
                             <option value="A1 (A Block - 1st Floor)">A1 - A Block, 1st Floor</option>
@@ -140,6 +140,18 @@
                             <option value="C3 (C Block - 3rd Floor)">C3 - C Block, 3rd Floor</option>
                         </select>
                     </div>
+
+                    <!-- Dynamic Sub-field: Block A Section (Only shown when Block A selected) -->
+                    <div id="wrapper-section" class="hidden">
+                        <label class="block text-[11px] text-indigo-400 mb-1 font-semibold">Block A Section</label>
+                        <select id="loc-section" class="w-full bg-slate-900 border border-indigo-500/50 rounded p-1.5 text-xs text-slate-200 focus:outline-none">
+                            <option value="Section 1">Section 1</option>
+                            <option value="Section 2">Section 2</option>
+                            <option value="Section 3">Section 3</option>
+                            <option value="Section 6">Section 6</option>
+                        </select>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-2">
                         <div>
                             <label class="block text-[11px] text-slate-400 mb-1">Room Number (0-50)</label>
@@ -200,7 +212,6 @@
     </div>
 
     <script>
-        // Populate Room (0-50) and Seat (0-100) dropdowns
         function initLocationDropdowns() {
             const roomSel = document.getElementById('loc-room');
             const seatSel = document.getElementById('loc-seat');
@@ -218,9 +229,21 @@
         initLocationDropdowns();
 
         let tickets = JSON.parse(localStorage.getItem('my_jobs_to_do_tickets')) || [
-            { id: 'TK-3232', subject: 'Software Installation', subOption: '', deskItems: [], locBlockFloor: 'CG (C Block - Ground Floor)', locRoom: 'Room 5', locSeat: 'Seat 12', desc: '• Install VLC Media Player\n• Setup default video associations', status: 'OPEN', priority: 'Medium', assignee: 'Sinoj Thomas' },
-            { id: 'TK-1002', subject: 'New Laptop', subOption: '14 Inch', deskItems: [], locBlockFloor: 'B1 (B Block - 1st Floor)', locRoom: 'Room 14', locSeat: 'Seat 3', desc: '• Prepare device setup\n• Verify company portal access', status: 'OPEN', priority: 'High', assignee: 'Sinoj Thomas' }
+            { id: 'TK-3232', subject: 'Software Installation', subOption: '', deskItems: [], locBlockFloor: 'AG (A Block - Ground Floor)', locSection: 'Section 1', locRoom: 'Room 5', locSeat: 'Seat 12', desc: '• Install VLC Media Player\n• Setup default video associations', status: 'OPEN', priority: 'Medium', assignee: 'Sinoj Thomas' },
+            { id: 'TK-1002', subject: 'New Laptop', subOption: '14 Inch', deskItems: [], locBlockFloor: 'B1 (B Block - 1st Floor)', locSection: '', locRoom: 'Room 14', locSeat: 'Seat 3', desc: '• Prepare device setup\n• Verify company portal access', status: 'OPEN', priority: 'High', assignee: 'Sinoj Thomas' }
         ];
+
+        function handleBlockChange() {
+            const blockFloor = document.getElementById('loc-block-floor').value;
+            const sectionWrapper = document.getElementById('wrapper-section');
+
+            // Show section dropdown ONLY for Block A options (AG, A1, A2, A3)
+            if (blockFloor.startsWith('A')) {
+                sectionWrapper.classList.remove('hidden');
+            } else {
+                sectionWrapper.classList.add('hidden');
+            }
+        }
 
         function render() {
             localStorage.setItem('my_jobs_to_do_tickets', JSON.stringify(tickets));
@@ -250,7 +273,14 @@
 
                 const subTag = subDetail ? `<span class="ml-2 text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30">${subDetail}</span>` : '';
 
-                const locationStr = t.locBlockFloor ? `${t.locBlockFloor.split(' ')[0]}, ${t.locRoom}, ${t.locSeat}` : (t.location || 'N/A');
+                let locationStr = 'N/A';
+                if (t.locBlockFloor) {
+                    const blockCode = t.locBlockFloor.split(' ')[0];
+                    const secTag = (t.locSection && blockCode.startsWith('A')) ? ` (${t.locSection})` : '';
+                    locationStr = `${blockCode}${secTag}, ${t.locRoom}, ${t.locSeat}`;
+                } else if (t.location) {
+                    locationStr = t.location;
+                }
 
                 const card = `
                     <div onclick="openEditModal('${t.id}')" class="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow-sm card-transition cursor-pointer hover:border-slate-600">
@@ -311,7 +341,8 @@
             document.getElementById('t-id').value = '';
             document.getElementById('t-subject').value = 'Software Installation';
             
-            document.getElementById('loc-block-floor').value = 'CG (C Block - Ground Floor)';
+            document.getElementById('loc-block-floor').value = 'AG (A Block - Ground Floor)';
+            document.getElementById('loc-section').value = 'Section 1';
             document.getElementById('loc-room').value = 'Room 0';
             document.getElementById('loc-seat').value = 'Seat 0';
 
@@ -322,6 +353,7 @@
             
             resetDeskAccessories();
             handleSubjectChange();
+            handleBlockChange();
 
             document.getElementById('btn-delete').classList.add('hidden');
             const modal = document.getElementById('modal');
@@ -349,9 +381,12 @@
                 });
             }
 
-            document.getElementById('loc-block-floor').value = t.locBlockFloor || 'CG (C Block - Ground Floor)';
+            document.getElementById('loc-block-floor').value = t.locBlockFloor || 'AG (A Block - Ground Floor)';
+            document.getElementById('loc-section').value = t.locSection || 'Section 1';
             document.getElementById('loc-room').value = t.locRoom || 'Room 0';
             document.getElementById('loc-seat').value = t.locSeat || 'Seat 0';
+
+            handleBlockChange();
 
             document.getElementById('t-desc').value = t.desc || '';
             document.getElementById('t-status').value = t.status;
@@ -375,6 +410,7 @@
             const subject = document.getElementById('t-subject').value;
             
             const locBlockFloor = document.getElementById('loc-block-floor').value;
+            const locSection = locBlockFloor.startsWith('A') ? document.getElementById('loc-section').value : '';
             const locRoom = document.getElementById('loc-room').value;
             const locSeat = document.getElementById('loc-seat').value;
 
@@ -408,11 +444,11 @@
             if(id) {
                 const index = tickets.findIndex(t => t.id === id);
                 if(index !== -1) {
-                    tickets[index] = { id, subject, subOption, deskItems, locBlockFloor, locRoom, locSeat, desc, status, priority, assignee };
+                    tickets[index] = { id, subject, subOption, deskItems, locBlockFloor, locSection, locRoom, locSeat, desc, status, priority, assignee };
                 }
             } else {
                 const newId = 'TK-' + Math.floor(1000 + Math.random() * 9000);
-                tickets.unshift({ id: newId, subject, subOption, deskItems, locBlockFloor, locRoom, locSeat, desc, status, priority, assignee });
+                tickets.unshift({ id: newId, subject, subOption, deskItems, locBlockFloor, locSection, locRoom, locSeat, desc, status, priority, assignee });
             }
 
             closeModal();
