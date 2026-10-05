@@ -18,6 +18,7 @@
         .tab-btn { transition: all 0.2s ease; cursor: pointer; }
         .tab-btn.active-all { border-color: #6366f1; background-color: rgba(99, 102, 241, 0.15); }
         .tab-btn.active-open { border-color: #f59e0b; background-color: rgba(245, 158, 11, 0.15); }
+        .tab-btn.active-waiting { border-color: #a855f7; background-color: rgba(168, 85, 247, 0.15); }
         .tab-btn.active-progress { border-color: #3b82f6; background-color: rgba(59, 130, 246, 0.15); }
         .tab-btn.active-resolved { border-color: #10b981; background-color: rgba(16, 185, 129, 0.15); }
     </style>
@@ -48,22 +49,26 @@
     </div>
 
     <!-- Tab Navigation & Status Counts -->
-    <div class="grid grid-cols-4 gap-2 mb-6 text-center">
-        <div onclick="setTab('ALL')" id="tab-all" class="tab-btn active-all bg-slate-800 p-2.5 rounded-lg border border-slate-700 shadow-sm">
-            <span class="block text-xl font-bold text-slate-200" id="stat-all">0</span>
-            <span class="text-[11px] font-medium text-slate-400">All</span>
+    <div class="grid grid-cols-5 gap-1.5 mb-6 text-center">
+        <div onclick="setTab('ALL')" id="tab-all" class="tab-btn active-all bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm">
+            <span class="block text-lg font-bold text-slate-200" id="stat-all">0</span>
+            <span class="text-[10px] font-medium text-slate-400">All</span>
         </div>
-        <div onclick="setTab('OPEN')" id="tab-open" class="tab-btn bg-slate-800 p-2.5 rounded-lg border border-slate-700 shadow-sm">
-            <span class="block text-xl font-bold text-amber-400" id="stat-open">0</span>
-            <span class="text-[11px] font-medium text-slate-400">Open</span>
+        <div onclick="setTab('OPEN')" id="tab-open" class="tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm">
+            <span class="block text-lg font-bold text-amber-400" id="stat-open">0</span>
+            <span class="text-[10px] font-medium text-slate-400">Open</span>
         </div>
-        <div onclick="setTab('IN PROGRESS')" id="tab-progress" class="tab-btn bg-slate-800 p-2.5 rounded-lg border border-slate-700 shadow-sm">
-            <span class="block text-xl font-bold text-blue-400" id="stat-progress">0</span>
-            <span class="text-[11px] font-medium text-slate-400">In Progress</span>
+        <div onclick="setTab('WAITING FOR EMAIL RESPONSE/LICENSE INFORMATION')" id="tab-waiting" class="tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm">
+            <span class="block text-lg font-bold text-purple-400" id="stat-waiting">0</span>
+            <span class="text-[10px] font-medium text-slate-400 leading-tight">Waiting Info</span>
         </div>
-        <div onclick="setTab('RESOLVED')" id="tab-resolved" class="tab-btn bg-slate-800 p-2.5 rounded-lg border border-slate-700 shadow-sm">
-            <span class="block text-xl font-bold text-emerald-400" id="stat-resolved">0</span>
-            <span class="text-[11px] font-medium text-slate-400">Resolved</span>
+        <div onclick="setTab('IN PROGRESS')" id="tab-progress" class="tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm">
+            <span class="block text-lg font-bold text-blue-400" id="stat-progress">0</span>
+            <span class="text-[10px] font-medium text-slate-400">In Progress</span>
+        </div>
+        <div onclick="setTab('RESOLVED')" id="tab-resolved" class="tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm">
+            <span class="block text-lg font-bold text-emerald-400" id="stat-resolved">0</span>
+            <span class="text-[10px] font-medium text-slate-400">Resolved</span>
         </div>
     </div>
 
@@ -216,15 +221,16 @@
             <div class="grid grid-cols-2 gap-3 mb-3">
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">Status</label>
-                    <select id="t-status" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+                    <select id="t-status" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
                         <option value="OPEN">OPEN</option>
+                        <option value="WAITING FOR EMAIL RESPONSE/LICENSE INFORMATION">WAITING FOR EMAIL RESPONSE/LICENSE INFORMATION</option>
                         <option value="IN PROGRESS">IN PROGRESS</option>
                         <option value="RESOLVED">RESOLVED</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">Priority</label>
-                    <select id="t-priority" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+                    <select id="t-priority" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
                         <option value="Low">Low</option>
                         <option value="Medium">Medium</option>
                         <option value="High">High</option>
@@ -270,13 +276,15 @@
         function setTab(tab) {
             currentTab = tab;
 
-            document.getElementById('tab-all').className = 'tab-btn bg-slate-800 p-2.5 rounded-lg border border-slate-700 shadow-sm';
-            document.getElementById('tab-open').className = 'tab-btn bg-slate-800 p-2.5 rounded-lg border border-slate-700 shadow-sm';
-            document.getElementById('tab-progress').className = 'tab-btn bg-slate-800 p-2.5 rounded-lg border border-slate-700 shadow-sm';
-            document.getElementById('tab-resolved').className = 'tab-btn bg-slate-800 p-2.5 rounded-lg border border-slate-700 shadow-sm';
+            document.getElementById('tab-all').className = 'tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm';
+            document.getElementById('tab-open').className = 'tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm';
+            document.getElementById('tab-waiting').className = 'tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm';
+            document.getElementById('tab-progress').className = 'tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm';
+            document.getElementById('tab-resolved').className = 'tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm';
 
             if (tab === 'ALL') document.getElementById('tab-all').classList.add('active-all');
             if (tab === 'OPEN') document.getElementById('tab-open').classList.add('active-open');
+            if (tab === 'WAITING FOR EMAIL RESPONSE/LICENSE INFORMATION') document.getElementById('tab-waiting').classList.add('active-waiting');
             if (tab === 'IN PROGRESS') document.getElementById('tab-progress').classList.add('active-progress');
             if (tab === 'RESOLVED') document.getElementById('tab-resolved').classList.add('active-resolved');
 
@@ -349,15 +357,17 @@
                 clearBtn.classList.add('hidden');
             }
 
-            var openCount = 0, progressCount = 0, resolvedCount = 0;
+            var openCount = 0, waitingCount = 0, progressCount = 0, resolvedCount = 0;
             tickets.forEach(function(t) {
                 if (t.status === 'OPEN') openCount++;
+                if (t.status === 'WAITING FOR EMAIL RESPONSE/LICENSE INFORMATION') waitingCount++;
                 if (t.status === 'IN PROGRESS') progressCount++;
                 if (t.status === 'RESOLVED') resolvedCount++;
             });
 
             document.getElementById('stat-all').innerText = tickets.length;
             document.getElementById('stat-open').innerText = openCount;
+            document.getElementById('stat-waiting').innerText = waitingCount;
             document.getElementById('stat-progress').innerText = progressCount;
             document.getElementById('stat-resolved').innerText = resolvedCount;
 
@@ -382,6 +392,7 @@
 
             filteredTickets.forEach(function(t) {
                 var badgeClass = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+                if (t.status === 'WAITING FOR EMAIL RESPONSE/LICENSE INFORMATION') badgeClass = 'bg-purple-500/20 text-purple-300 border-purple-500/30';
                 if (t.status === 'IN PROGRESS') badgeClass = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
                 if (t.status === 'RESOLVED') badgeClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
 
@@ -412,9 +423,9 @@
                 var priorityClass = t.priority === 'High' ? 'text-rose-400' : 'text-slate-300';
 
                 var card = '<div onclick="openEditModal(\'' + t.id + '\')" class="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow-sm card-transition cursor-pointer hover:border-slate-600">' +
-                    '<div class="flex justify-between items-start mb-2">' +
-                        '<span class="text-xs font-semibold px-2 py-0.5 rounded border ' + badgeClass + '">' + t.status + '</span>' +
-                        '<span class="text-xs text-slate-400">#' + t.id + '</span>' +
+                    '<div class="flex justify-between items-start mb-2 gap-2">' +
+                        '<span class="text-[10px] font-semibold px-2 py-0.5 rounded border leading-tight text-left ' + badgeClass + '">' + t.status + '</span>' +
+                        '<span class="text-xs text-slate-400 shrink-0">#' + t.id + '</span>' +
                     '</div>' +
                     '<h3 class="font-semibold text-slate-100 mb-1 flex items-center flex-wrap">' +
                         t.subject + ' ' + subTag +
