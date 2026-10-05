@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>My Jobs To Do</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
         .modal-animate { transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out; }
@@ -17,7 +22,7 @@
     <div class="flex items-center justify-between border-b border-slate-700 pb-4 mb-6">
         <div>
             <h1 class="text-2xl font-bold text-indigo-400">My Jobs To Do</h1>
-            <p class="text-xs text-slate-400">IT Support Dashboard</p>
+            <p class="text-xs text-slate-400">IT Support Dashboard <span class="text-emerald-400 ml-1">● Live Sync</span></p>
         </div>
         <div class="flex gap-2">
             <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow transition-all duration-200 flex items-center gap-1">
@@ -46,7 +51,9 @@
     </div>
 
     <!-- Ticket List -->
-    <div id="ticket-list" class="space-y-3"></div>
+    <div id="ticket-list" class="space-y-3">
+        <div class="text-center text-slate-500 text-xs py-8">Loading tickets from cloud...</div>
+    </div>
 
     <!-- Create/Edit Ticket Modal -->
     <div id="modal" class="fixed inset-0 bg-black/75 flex items-center justify-center p-4 hidden z-50 opacity-0 modal-animate">
@@ -216,6 +223,24 @@
     </div>
 
     <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4kt0CDsJwicfuI-FAvNDae4ZO0KfCYTI",
+            authDomain: "it-ticketing-app-72f0e.firebaseapp.com",
+            databaseURL: "https://it-ticketing-app-72f0e-default-rtdb.firebaseio.com",
+            projectId: "it-ticketing-app-72f0e",
+            storageBucket: "it-ticketing-app-72f0e.firebasestorage.app",
+            messagingSenderId: "105148297755",
+            appId: "1:105148297755:web:29ab94c29a3fa7555abebe"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const ticketsRef = db.ref('tickets');
+
+        let tickets = [];
+
         function initLocationDropdowns() {
             var roomSel = document.getElementById('loc-room');
             var seatSel = document.getElementById('loc-seat');
@@ -232,10 +257,17 @@
         }
         initLocationDropdowns();
 
-        var tickets = JSON.parse(localStorage.getItem('my_jobs_to_do_tickets')) || [
-            { id: 'TK-3232', endUser: 'Alex Smith', subject: 'Software Installation', subOption: '', deskItems: [], locBlockFloor: 'AG (A Block - Ground Floor)', locSection: 'Section 1', locRoom: 'Room 5', locSeat: 'Seat 12', desc: '• Install VLC Media Player\n• Setup default video associations', status: 'OPEN', priority: 'Medium', assignee: 'Sinoj Thomas' },
-            { id: 'TK-1002', endUser: 'Sarah Connor', subject: 'New Laptop', subOption: '14 Inch', deskItems: [], locBlockFloor: 'B1 (B Block - 1st Floor)', locSection: '', locRoom: 'Room 14', locSeat: 'Seat 3', desc: '• Prepare device setup\n• Verify company portal access', status: 'OPEN', priority: 'High', assignee: 'Sinoj Thomas' }
-        ];
+        // Realtime Listener for Firebase
+        ticketsRef.on('value', function(snapshot) {
+            const data = snapshot.val();
+            tickets = [];
+            if (data) {
+                Object.keys(data).forEach(function(key) {
+                    tickets.push({ id: key, ...data[key] });
+                });
+            }
+            render();
+        });
 
         function handleBlockChange() {
             var blockFloor = document.getElementById('loc-block-floor').value;
@@ -249,9 +281,16 @@
         }
 
         function render() {
-            localStorage.setItem('my_jobs_to_do_tickets', JSON.stringify(tickets));
             var container = document.getElementById('ticket-list');
             container.innerHTML = '';
+
+            if (tickets.length === 0) {
+                container.innerHTML = '<div class="text-center text-slate-500 text-xs py-8">No tickets found. Click "+ New Ticket" to create one.</div>';
+                document.getElementById('stat-open').innerText = 0;
+                document.getElementById('stat-progress').innerText = 0;
+                document.getElementById('stat-resolved').innerText = 0;
+                return;
+            }
 
             var openCount = 0, progressCount = 0, resolvedCount = 0;
 
@@ -301,7 +340,7 @@
                     '<p class="text-[11px] text-slate-400 mb-2">📍 Location: <span class="text-slate-300">' + locationStr + '</span></p>' +
                     '<div class="space-y-0.5 mb-3">' + formattedDesc + '</div>' +
                     '<div class="flex justify-between items-center text-xs text-slate-400 pt-2 border-t border-slate-700/50">' +
-                        '<span>Assignee: <strong class="text-slate-200">' + t.assignee + '</strong></span>' +
+                        '<span>Assignee: <strong class="text-slate-200">' + (t.assignee || 'Sinoj Thomas') + '</strong></span>' +
                         '<span class="' + priorityClass + ' font-medium">' + t.priority + '</span>' +
                     '</div>' +
                 '</div>';
@@ -451,26 +490,36 @@
                 }
             }
 
+            var ticketData = {
+                endUser: endUser,
+                subject: subject,
+                subOption: subOption,
+                deskItems: deskItems,
+                locBlockFloor: locBlockFloor,
+                locSection: locSection,
+                locRoom: locRoom,
+                locSeat: locSeat,
+                desc: desc,
+                status: status,
+                priority: priority,
+                assignee: assignee
+            };
+
             if(id) {
-                var index = tickets.findIndex(function(t) { return t.id === id; });
-                if(index !== -1) {
-                    tickets[index] = { id: id, endUser: endUser, subject: subject, subOption: subOption, deskItems: deskItems, locBlockFloor: locBlockFloor, locSection: locSection, locRoom: locRoom, locSeat: locSeat, desc: desc, status: status, priority: priority, assignee: assignee };
-                }
+                db.ref('tickets/' + id).update(ticketData);
             } else {
-                var newId = 'TK-' + Math.floor(1000 + Math.random() * 9000);
-                tickets.unshift({ id: newId, endUser: endUser, subject: subject, subOption: subOption, deskItems: deskItems, locBlockFloor: locBlockFloor, locSection: locSection, locRoom: locRoom, locSeat: locSeat, desc: desc, status: status, priority: priority, assignee: assignee });
+                var newKey = 'TK-' + Math.floor(1000 + Math.random() * 9000);
+                db.ref('tickets/' + newKey).set(ticketData);
             }
 
             closeModal();
-            render();
         }
 
         function deleteTicket() {
             var id = document.getElementById('t-id').value;
             if(confirm("Are you sure you want to delete this ticket?")) {
-                tickets = tickets.filter(function(t) { return t.id !== id; });
+                db.ref('tickets/' + id).remove();
                 closeModal();
-                render();
             }
         }
 
@@ -539,8 +588,6 @@
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
         }
-
-        render();
     </script>
 </body>
 </html>
