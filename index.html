@@ -19,9 +19,14 @@
             <h1 class="text-2xl font-bold text-indigo-400">My Jobs To Do</h1>
             <p class="text-xs text-slate-400">IT Support Dashboard</p>
         </div>
-        <button onclick="openCreateModal()" class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow transition-all duration-200">
-            + New Ticket
-        </button>
+        <div class="flex gap-2">
+            <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow transition-all duration-200 flex items-center gap-1">
+                📊 Export Excel
+            </button>
+            <button onclick="openCreateModal()" class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow transition-all duration-200">
+                + New Ticket
+            </button>
+        </div>
     </div>
 
     <!-- Stats Overview -->
@@ -466,6 +471,56 @@
                 closeModal();
                 render();
             }
+        }
+
+        function exportToExcel() {
+            if (tickets.length === 0) {
+                alert('No tickets available to export.');
+                return;
+            }
+
+            const headers = ["Ticket ID", "End User", "Subject", "Sub Details", "Location", "Description", "Status", "Priority", "Assignee"];
+            
+            const rows = tickets.map(t => {
+                let subDetail = t.subOption || '';
+                if(t.deskItems && t.deskItems.length > 0) {
+                    subDetail = t.deskItems.map(i => `${i.name}: ${i.qty}`).join('; ');
+                }
+
+                let locationStr = 'N/A';
+                if (t.locBlockFloor) {
+                    const blockCode = t.locBlockFloor.split(' ')[0];
+                    const secTag = (t.locSection && blockCode.startsWith('A')) ? ` (${t.locSection})` : '';
+                    locationStr = `${blockCode}${secTag}, ${t.locRoom}, ${t.locSeat}`;
+                } else if (t.location) {
+                    locationStr = t.location;
+                }
+
+                const cleanDesc = (t.desc || '').replace(/\r?\n|\r/g, ' ');
+
+                return [
+                    `"${t.id}"`,
+                    `"${(t.endUser || '').replace(/"/g, '""')}"`,
+                    `"${(t.subject || '').replace(/"/g, '""')}"`,
+                    `"${subDetail.replace(/"/g, '""')}"`,
+                    `"${locationStr.replace(/"/g, '""')}"`,
+                    `"${cleanDesc.replace(/"/g, '""')}"`,
+                    `"${t.status}"`,
+                    `"${t.priority}"`,
+                    `"${(t.assignee || '').replace(/"/g, '""')}"`
+                ];
+            });
+
+            const csvContent = "\uFEFF" + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `IT_Tickets_Export_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         render();
