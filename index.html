@@ -77,7 +77,6 @@
             <div id="wrapper-desk-settings" class="hidden mb-3 bg-slate-900/60 p-3 rounded-lg border border-indigo-500/30">
                 <label class="block text-xs text-indigo-400 mb-2 font-semibold">Desk Accessories & Quantities</label>
                 <div class="space-y-2" id="desk-accessories-list">
-                    <!-- Accessory Item Rows -->
                     <div class="flex items-center justify-between text-xs text-slate-200">
                         <span>Dock Screen</span>
                         <select data-acc="Dock Screen" class="acc-qty-select bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-500">
@@ -117,9 +116,46 @@
                 </div>
             </div>
 
-            <!-- User Location -->
-            <label class="block text-xs text-slate-400 mb-1">User Location</label>
-            <input type="text" id="t-location" placeholder="e.g. Building A - Room 204" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 mb-3 focus:outline-none focus:border-indigo-500 transition-colors">
+            <!-- User Location Dropdowns -->
+            <div class="bg-slate-900/40 p-3 rounded-lg border border-slate-700 mb-3">
+                <label class="block text-xs text-slate-400 mb-2 font-semibold">User Location</label>
+                <div class="space-y-2">
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1">Block & Floor</label>
+                        <select id="loc-block-floor" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <!-- Block A -->
+                            <option value="AG (A Block - Ground Floor)">AG - A Block, Ground Floor</option>
+                            <option value="A1 (A Block - 1st Floor)">A1 - A Block, 1st Floor</option>
+                            <option value="A2 (A Block - 2nd Floor)">A2 - A Block, 2nd Floor</option>
+                            <option value="A3 (A Block - 3rd Floor)">A3 - A Block, 3rd Floor</option>
+                            <!-- Block B -->
+                            <option value="BG (B Block - Ground Floor)">BG - B Block, Ground Floor</option>
+                            <option value="B1 (B Block - 1st Floor)">B1 - B Block, 1st Floor</option>
+                            <option value="B2 (B Block - 2nd Floor)">B2 - B Block, 2nd Floor</option>
+                            <option value="B3 (B Block - 3rd Floor)">B3 - B Block, 3rd Floor</option>
+                            <!-- Block C -->
+                            <option value="CG (C Block - Ground Floor)">CG - C Block, Ground Floor</option>
+                            <option value="C1 (C Block - 1st Floor)">C1 - C Block, 1st Floor</option>
+                            <option value="C2 (C Block - 2nd Floor)">C2 - C Block, 2nd Floor</option>
+                            <option value="C3 (C Block - 3rd Floor)">C3 - C Block, 3rd Floor</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Room Number (0-50)</label>
+                            <select id="loc-room" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                                <!-- Populated dynamically 0-50 -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Seat Number (0-100)</label>
+                            <select id="loc-seat" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                                <!-- Populated dynamically 0-100 -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Description with Bullet Points Helper -->
             <div class="flex justify-between items-center mb-1">
@@ -164,9 +200,26 @@
     </div>
 
     <script>
+        // Populate Room (0-50) and Seat (0-100) dropdowns
+        function initLocationDropdowns() {
+            const roomSel = document.getElementById('loc-room');
+            const seatSel = document.getElementById('loc-seat');
+            
+            roomSel.innerHTML = '';
+            for(let i=0; i<=50; i++) {
+                roomSel.innerHTML += `<option value="Room ${i}">Room ${i}</option>`;
+            }
+
+            seatSel.innerHTML = '';
+            for(let i=0; i<=100; i++) {
+                seatSel.innerHTML += `<option value="Seat ${i}">Seat ${i}</option>`;
+            }
+        }
+        initLocationDropdowns();
+
         let tickets = JSON.parse(localStorage.getItem('my_jobs_to_do_tickets')) || [
-            { id: 'TK-3232', subject: 'Software Installation', subOption: '', deskItems: [], location: 'Main Office', desc: '• Install VLC Media Player\n• Setup default video associations', status: 'OPEN', priority: 'Medium', assignee: 'Sinoj Thomas' },
-            { id: 'TK-1002', subject: 'New Laptop', subOption: '14 Inch', deskItems: [], location: 'Lab 2B', desc: '• Prepare device setup\n• Verify company portal access', status: 'OPEN', priority: 'High', assignee: 'Sinoj Thomas' }
+            { id: 'TK-3232', subject: 'Software Installation', subOption: '', deskItems: [], locBlockFloor: 'CG (C Block - Ground Floor)', locRoom: 'Room 5', locSeat: 'Seat 12', desc: '• Install VLC Media Player\n• Setup default video associations', status: 'OPEN', priority: 'Medium', assignee: 'Sinoj Thomas' },
+            { id: 'TK-1002', subject: 'New Laptop', subOption: '14 Inch', deskItems: [], locBlockFloor: 'B1 (B Block - 1st Floor)', locRoom: 'Room 14', locSeat: 'Seat 3', desc: '• Prepare device setup\n• Verify company portal access', status: 'OPEN', priority: 'High', assignee: 'Sinoj Thomas' }
         ];
 
         function render() {
@@ -197,6 +250,8 @@
 
                 const subTag = subDetail ? `<span class="ml-2 text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30">${subDetail}</span>` : '';
 
+                const locationStr = t.locBlockFloor ? `${t.locBlockFloor.split(' ')[0]}, ${t.locRoom}, ${t.locSeat}` : (t.location || 'N/A');
+
                 const card = `
                     <div onclick="openEditModal('${t.id}')" class="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow-sm card-transition cursor-pointer hover:border-slate-600">
                         <div class="flex justify-between items-start mb-2">
@@ -206,7 +261,7 @@
                         <h3 class="font-semibold text-slate-100 mb-1 flex items-center flex-wrap">
                             ${t.subject} ${subTag}
                         </h3>
-                        ${t.location ? `<p class="text-[11px] text-slate-400 mb-2">📍 Location: <span class="text-slate-300">${t.location}</span></p>` : ''}
+                        <p class="text-[11px] text-slate-400 mb-2">📍 Location: <span class="text-slate-300">${locationStr}</span></p>
                         <div class="space-y-0.5 mb-3">${formattedDesc}</div>
                         <div class="flex justify-between items-center text-xs text-slate-400 pt-2 border-t border-slate-700/50">
                             <span>Assignee: <strong class="text-slate-200">${t.assignee}</strong></span>
@@ -255,7 +310,11 @@
             document.getElementById('modal-title').innerText = "Create Ticket";
             document.getElementById('t-id').value = '';
             document.getElementById('t-subject').value = 'Software Installation';
-            document.getElementById('t-location').value = '';
+            
+            document.getElementById('loc-block-floor').value = 'CG (C Block - Ground Floor)';
+            document.getElementById('loc-room').value = 'Room 0';
+            document.getElementById('loc-seat').value = 'Seat 0';
+
             document.getElementById('t-desc').value = '• ';
             document.getElementById('t-status').value = 'OPEN';
             document.getElementById('t-priority').value = 'Medium';
@@ -290,7 +349,10 @@
                 });
             }
 
-            document.getElementById('t-location').value = t.location || '';
+            document.getElementById('loc-block-floor').value = t.locBlockFloor || 'CG (C Block - Ground Floor)';
+            document.getElementById('loc-room').value = t.locRoom || 'Room 0';
+            document.getElementById('loc-seat').value = t.locSeat || 'Seat 0';
+
             document.getElementById('t-desc').value = t.desc || '';
             document.getElementById('t-status').value = t.status;
             document.getElementById('t-priority').value = t.priority;
@@ -311,7 +373,11 @@
         function saveTicket() {
             const id = document.getElementById('t-id').value;
             const subject = document.getElementById('t-subject').value;
-            const location = document.getElementById('t-location').value.trim();
+            
+            const locBlockFloor = document.getElementById('loc-block-floor').value;
+            const locRoom = document.getElementById('loc-room').value;
+            const locSeat = document.getElementById('loc-seat').value;
+
             const desc = document.getElementById('t-desc').value.trim();
             const status = document.getElementById('t-status').value;
             const priority = document.getElementById('t-priority').value;
@@ -342,11 +408,11 @@
             if(id) {
                 const index = tickets.findIndex(t => t.id === id);
                 if(index !== -1) {
-                    tickets[index] = { id, subject, subOption, deskItems, location, desc, status, priority, assignee };
+                    tickets[index] = { id, subject, subOption, deskItems, locBlockFloor, locRoom, locSeat, desc, status, priority, assignee };
                 }
             } else {
                 const newId = 'TK-' + Math.floor(1000 + Math.random() * 9000);
-                tickets.unshift({ id: newId, subject, subOption, deskItems, location, desc, status, priority, assignee });
+                tickets.unshift({ id: newId, subject, subOption, deskItems, locBlockFloor, locRoom, locSeat, desc, status, priority, assignee });
             }
 
             closeModal();
