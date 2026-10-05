@@ -19,7 +19,7 @@
 </head>
 <body class="p-4 min-h-screen pb-12">
     <!-- Header -->
-    <div class="flex items-center justify-between border-b border-slate-700 pb-4 mb-6">
+    <div class="flex items-center justify-between border-b border-slate-700 pb-4 mb-4">
         <div>
             <h1 class="text-2xl font-bold text-indigo-400">My Jobs To Do</h1>
             <p class="text-xs text-slate-400">IT Support Dashboard <span class="text-emerald-400 ml-1">● Live Sync</span></p>
@@ -31,6 +31,14 @@
             <button onclick="openCreateModal()" class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow transition-all duration-200">
                 + New Ticket
             </button>
+        </div>
+    </div>
+
+    <!-- Live Search Bar -->
+    <div class="mb-4">
+        <div class="relative">
+            <input type="text" id="search-user" oninput="render()" placeholder="🔍 Search by End-User Name or Asset Number..." class="w-full bg-slate-800 border border-slate-700 rounded-lg py-2 pl-3 pr-8 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
+            <button onclick="clearSearch()" id="btn-clear-search" class="hidden absolute right-2 top-2 text-slate-400 hover:text-slate-200 text-xs font-bold">✕</button>
         </div>
     </div>
 
@@ -62,9 +70,17 @@
             
             <input type="hidden" id="t-id">
 
-            <!-- End User Name -->
-            <label class="block text-xs text-slate-400 mb-1">End User Name</label>
-            <input type="text" id="t-end-user" placeholder="e.g. John Doe" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 mb-3 focus:outline-none focus:border-indigo-500 transition-colors">
+            <!-- End User Name & Asset Number -->
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">End User Name</label>
+                    <input type="text" id="t-end-user" placeholder="e.g. John Doe" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Asset Number</label>
+                    <input type="text" id="t-asset-no" placeholder="e.g. AST-9842" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+                </div>
+            </div>
 
             <!-- Subject Dropdown -->
             <label class="block text-xs text-slate-400 mb-1">Subject</label>
@@ -167,7 +183,7 @@
 
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">Room Number (0-50)</label>
+                            <label class="block text-[11px] text-slate-400 mb-1" id="lbl-room-range">Room Number (0-50)</label>
                             <select id="loc-room" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
                             </select>
                         </div>
@@ -241,19 +257,25 @@
 
         let tickets = [];
 
-        function initLocationDropdowns() {
+        function updateRoomDropdown(maxRooms, selectedValue) {
             var roomSel = document.getElementById('loc-room');
-            var seatSel = document.getElementById('loc-seat');
-            
+            var currentVal = selectedValue || roomSel.value || 'Room 0';
             roomSel.innerHTML = '';
-            for(var i=0; i<=50; i++) {
-                roomSel.innerHTML += '<option value="Room ' + i + '">Room ' + i + '</option>';
+            for (var i = 0; i <= maxRooms; i++) {
+                var valStr = 'Room ' + i;
+                var isSelected = (valStr === currentVal) ? ' selected' : '';
+                roomSel.innerHTML += '<option value="' + valStr + '"' + isSelected + '>' + valStr + '</option>';
             }
+            document.getElementById('lbl-room-range').innerText = 'Room Number (0-' + maxRooms + ')';
+        }
 
+        function initLocationDropdowns() {
+            var seatSel = document.getElementById('loc-seat');
             seatSel.innerHTML = '';
-            for(var j=0; j<=100; j++) {
+            for (var j = 0; j <= 100; j++) {
                 seatSel.innerHTML += '<option value="Seat ' + j + '">Seat ' + j + '</option>';
             }
+            updateRoomDropdown(50);
         }
         initLocationDropdowns();
 
@@ -278,14 +300,41 @@
             } else {
                 sectionWrapper.classList.add('hidden');
             }
+
+            // B1 has 70 rooms, all other blocks have 50 rooms
+            var maxRooms = (blockFloor.indexOf('B1') === 0) ? 70 : 50;
+            updateRoomDropdown(maxRooms);
+        }
+
+        function clearSearch() {
+            document.getElementById('search-user').value = '';
+            render();
         }
 
         function render() {
             var container = document.getElementById('ticket-list');
             container.innerHTML = '';
 
-            if (tickets.length === 0) {
-                container.innerHTML = '<div class="text-center text-slate-500 text-xs py-8">No tickets found. Click "+ New Ticket" to create one.</div>';
+            var searchQuery = document.getElementById('search-user').value.toLowerCase().trim();
+            var clearBtn = document.getElementById('btn-clear-search');
+            
+            if (searchQuery) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+
+            // Filter tickets based on search query
+            var filteredTickets = tickets.filter(function(t) {
+                if (!searchQuery) return true;
+                var endUserMatch = (t.endUser || '').toLowerCase().includes(searchQuery);
+                var assetMatch = (t.assetNo || '').toLowerCase().includes(searchQuery);
+                return endUserMatch || assetMatch;
+            });
+
+            if (filteredTickets.length === 0) {
+                var msg = searchQuery ? 'No tickets found matching "' + searchQuery + '".' : 'No tickets found. Click "+ New Ticket" to create one.';
+                container.innerHTML = '<div class="text-center text-slate-500 text-xs py-8">' + msg + '</div>';
                 document.getElementById('stat-open').innerText = 0;
                 document.getElementById('stat-progress').innerText = 0;
                 document.getElementById('stat-resolved').innerText = 0;
@@ -294,14 +343,14 @@
 
             var openCount = 0, progressCount = 0, resolvedCount = 0;
 
-            tickets.forEach(function(t) {
-                if(t.status === 'OPEN') openCount++;
-                if(t.status === 'IN PROGRESS') progressCount++;
-                if(t.status === 'RESOLVED') resolvedCount++;
+            filteredTickets.forEach(function(t) {
+                if (t.status === 'OPEN') openCount++;
+                if (t.status === 'IN PROGRESS') progressCount++;
+                if (t.status === 'RESOLVED') resolvedCount++;
 
                 var badgeClass = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-                if(t.status === 'IN PROGRESS') badgeClass = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-                if(t.status === 'RESOLVED') badgeClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+                if (t.status === 'IN PROGRESS') badgeClass = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+                if (t.status === 'RESOLVED') badgeClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
 
                 var formattedDesc = (t.desc || 'No description provided.')
                     .split('\n')
@@ -309,7 +358,7 @@
                     .join('');
 
                 var subDetail = t.subOption || '';
-                if(t.deskItems && t.deskItems.length > 0) {
+                if (t.deskItems && t.deskItems.length > 0) {
                     subDetail = t.deskItems.map(function(i) { return i.name + ': ' + i.qty; }).join(', ');
                 }
 
@@ -324,7 +373,8 @@
                     locationStr = t.location;
                 }
 
-                var endUserStr = t.endUser ? '<p class="text-[11px] text-slate-400 mb-0.5">👤 End User: <span class="text-slate-200 font-medium">' + t.endUser + '</span></p>' : '';
+                var assetTag = t.assetNo ? ' <span class="text-indigo-400 text-[11px] font-normal ml-2">(Asset: ' + t.assetNo + ')</span>' : '';
+                var endUserStr = t.endUser ? '<p class="text-[11px] text-slate-400 mb-0.5">👤 End User: <span class="text-slate-200 font-medium">' + t.endUser + '</span>' + assetTag + '</p>' : (t.assetNo ? '<p class="text-[11px] text-slate-400 mb-0.5">🏷️️ Asset No: <span class="text-indigo-300 font-medium">' + t.assetNo + '</span></p>' : '');
 
                 var priorityClass = t.priority === 'High' ? 'text-rose-400' : 'text-slate-300';
 
@@ -386,10 +436,13 @@
             document.getElementById('modal-title').innerText = "Create Ticket";
             document.getElementById('t-id').value = '';
             document.getElementById('t-end-user').value = '';
+            document.getElementById('t-asset-no').value = '';
             document.getElementById('t-subject').value = 'Software Installation';
             
             document.getElementById('loc-block-floor').value = 'AG (A Block - Ground Floor)';
             document.getElementById('loc-section').value = 'Section 1';
+            
+            handleBlockChange();
             document.getElementById('loc-room').value = 'Room 0';
             document.getElementById('loc-seat').value = 'Seat 0';
 
@@ -400,7 +453,6 @@
             
             resetDeskAccessories();
             handleSubjectChange();
-            handleBlockChange();
 
             document.getElementById('btn-delete').classList.add('hidden');
             var modal = document.getElementById('modal');
@@ -410,11 +462,12 @@
 
         function openEditModal(id) {
             var t = tickets.find(function(item) { return item.id === id; });
-            if(!t) return;
+            if (!t) return;
 
             document.getElementById('modal-title').innerText = "Edit Ticket #" + t.id;
             document.getElementById('t-id').value = t.id;
             document.getElementById('t-end-user').value = t.endUser || '';
+            document.getElementById('t-asset-no').value = t.assetNo || '';
             document.getElementById('t-subject').value = t.subject;
             
             resetDeskAccessories();
@@ -425,16 +478,16 @@
             } else if (t.subject === 'Desk Settings' && t.deskItems) {
                 t.deskItems.forEach(function(item) {
                     var sel = document.querySelector('.acc-qty-select[data-acc="' + item.name + '"]');
-                    if(sel) sel.value = item.qty;
+                    if (sel) sel.value = item.qty;
                 });
             }
 
             document.getElementById('loc-block-floor').value = t.locBlockFloor || 'AG (A Block - Ground Floor)';
             document.getElementById('loc-section').value = t.locSection || 'Section 1';
-            document.getElementById('loc-room').value = t.locRoom || 'Room 0';
-            document.getElementById('loc-seat').value = t.locSeat || 'Seat 0';
-
+            
             handleBlockChange();
+            updateRoomDropdown((t.locBlockFloor && t.locBlockFloor.indexOf('B1') === 0) ? 70 : 50, t.locRoom || 'Room 0');
+            document.getElementById('loc-seat').value = t.locSeat || 'Seat 0';
 
             document.getElementById('t-desc').value = t.desc || '';
             document.getElementById('t-status').value = t.status;
@@ -456,6 +509,7 @@
         function saveTicket() {
             var id = document.getElementById('t-id').value;
             var endUser = document.getElementById('t-end-user').value.trim();
+            var assetNo = document.getElementById('t-asset-no').value.trim();
             var subject = document.getElementById('t-subject').value;
             
             var locBlockFloor = document.getElementById('loc-block-floor').value;
@@ -492,6 +546,7 @@
 
             var ticketData = {
                 endUser: endUser,
+                assetNo: assetNo,
                 subject: subject,
                 subOption: subOption,
                 deskItems: deskItems,
@@ -505,7 +560,7 @@
                 assignee: assignee
             };
 
-            if(id) {
+            if (id) {
                 db.ref('tickets/' + id).update(ticketData);
             } else {
                 var newKey = 'TK-' + Math.floor(1000 + Math.random() * 9000);
@@ -517,7 +572,7 @@
 
         function deleteTicket() {
             var id = document.getElementById('t-id').value;
-            if(confirm("Are you sure you want to delete this ticket?")) {
+            if (confirm("Are you sure you want to delete this ticket?")) {
                 db.ref('tickets/' + id).remove();
                 closeModal();
             }
@@ -529,11 +584,11 @@
                 return;
             }
 
-            var headers = ["Ticket ID", "End User", "Subject", "Sub Details", "Location", "Description", "Status", "Priority", "Assignee"];
+            var headers = ["Ticket ID", "End User", "Asset Number", "Subject", "Sub Details", "Location", "Description", "Status", "Priority", "Assignee"];
             
             var rows = tickets.map(function(t) {
                 var subDetail = t.subOption || '';
-                if(t.deskItems && t.deskItems.length > 0) {
+                if (t.deskItems && t.deskItems.length > 0) {
                     subDetail = t.deskItems.map(function(i) { return i.name + ': ' + i.qty; }).join('; ');
                 }
 
@@ -551,6 +606,7 @@
                 return [
                     '"' + t.id + '"',
                     '"' + (t.endUser || '').replace(/"/g, '""') + '"',
+                    '"' + (t.assetNo || '').replace(/"/g, '""') + '"',
                     '"' + (t.subject || '').replace(/"/g, '""') + '"',
                     '"' + subDetail.replace(/"/g, '""') + '"',
                     '"' + locationStr.replace(/"/g, '""') + '"',
