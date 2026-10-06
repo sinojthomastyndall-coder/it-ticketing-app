@@ -209,19 +209,19 @@
                     <div>
                         <label class="block text-[11px] text-slate-400 mb-1">Block & Floor</label>
                         <select id="loc-block-floor" onchange="handleBlockChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-                            <option value="AG (A Block - Ground Floor)">AG - A Block, Ground Floor</option>
-                            <option value="A1 (A Block - 1st Floor)">A1 - A Block, 1st Floor</option>
-                            <option value="A2 (A Block - 2nd Floor)">A2 - A Block, 2nd Floor</option>
-                            <option value="A3 (A Block - 3rd Floor)">A3 - A Block, 3rd Floor</option>
-                            <option value="BG (B Block - Ground Floor)">BG - B Block, Ground Floor</option>
-                            <option value="B1 (B Block - 1st Floor)">B1 - B Block, 1st Floor</option>
-                            <option value="B2 (B Block - 2nd Floor)">B2 - B Block, 2nd Floor</option>
-                            <option value="B3 (B Block - 3rd Floor)">B3 - B Block, 3rd Floor</option>
-                            <option value="CG (C Block - Ground Floor)">CG - C Block, Ground Floor</option>
-                            <option value="C1 (C Block - 1st Floor)">C1 - C Block, 1st Floor</option>
-                            <option value="C2 (C Block - 2nd Floor)">C2 - C Block, 2nd Floor</option>
-                            <option value="C3 (C Block - 3rd Floor)">C3 - C Block, 3rd Floor</option>
-                        </select>
+    <option value="A Block - Ground Floor">A Block - Ground Floor</option>
+    <option value="A Block - 1st Floor">A Block - 1st Floor</option>
+    <option value="A Block - 2nd Floor">A Block - 2nd Floor</option>
+    <option value="A Block - 3rd Floor">A Block - 3rd Floor</option>
+    <option value="B Block - Ground Floor">B Block - Ground Floor</option>
+    <option value="B Block - 1st Floor">B Block - 1st Floor</option>
+    <option value="B Block - 2nd Floor">B Block - 2nd Floor</option>
+    <option value="B Block - 3rd Floor">B Block - 3rd Floor</option>
+    <option value="C Block - Ground Floor">C Block - Ground Floor</option>
+    <option value="C Block - 1st Floor">C Block - 1st Floor</option>
+    <option value="C Block - 2nd Floor">C Block - 2nd Floor</option>
+    <option value="C Block - 3rd Floor">C Block - 3rd Floor</option>
+</select>
                     </div>
 
                     <!-- Block A Section -->
@@ -471,19 +471,20 @@
         });
 
         function handleBlockChange() {
-            var blockFloor = document.getElementById('loc-block-floor').value;
-            var sectionWrapper = document.getElementById('wrapper-section');
+    var blockFloor = document.getElementById('loc-block-floor').value;
+    var sectionWrapper = document.getElementById('wrapper-section');
 
-            if (blockFloor.indexOf('A') === 0) {
-                sectionWrapper.classList.remove('hidden');
-            } else {
-                sectionWrapper.classList.add('hidden');
-            }
+    // Checks if the selected value starts with "A Block"
+    if (blockFloor.startsWith('A Block')) {
+        sectionWrapper.classList.remove('hidden');
+    } else {
+        sectionWrapper.classList.add('hidden');
+    }
 
-            var maxRooms = (blockFloor.indexOf('B1') === 0) ? 70 : 50;
-            updateRoomDropdown(maxRooms);
-        }
-
+    // Checks if the selected value is "B Block - 1st Floor"
+    var maxRooms = (blockFloor === 'B Block - 1st Floor') ? 70 : 50;
+    updateRoomDropdown(maxRooms);
+}
         function clearSearch() {
             document.getElementById('search-user').value = '';
             render();
