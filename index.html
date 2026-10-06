@@ -299,8 +299,13 @@
         let uniqueUserNames = [];
         let statusChart = null;
 
+        // Local date string generator (YYYY-MM-DD)
         function getTodayFormatted() {
-            return new Date().toISOString().split('T')[0];
+            var d = new Date();
+            var year = d.getFullYear();
+            var month = ('0' + (d.getMonth() + 1)).slice(-2);
+            var day = ('0' + d.getDate()).slice(-2);
+            return year + '-' + month + '-' + day;
         }
 
         function initPieChart() {
@@ -447,7 +452,7 @@
                 });
             }
             
-            // Sort tickets by createdAt descending (Newest on top)
+            // Sort tickets: Newest created/updated on top
             tickets.sort(function(a, b) {
                 var timeA = a.createdAt || 0;
                 var timeB = b.createdAt || 0;
@@ -572,9 +577,14 @@
 
                 var priorityClass = t.priority === 'High' ? 'text-rose-400' : 'text-slate-300';
 
+                var resDateTag = (t.status === 'RESOLVED' && t.resolvedDate) ? '<span class="text-[10px] text-cyan-400 font-mono">Resolved: ' + t.resolvedDate + '</span>' : '';
+
                 var card = '<div onclick="openEditModal(\'' + t.id + '\')" class="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow-sm card-transition cursor-pointer hover:border-slate-600">' +
                     '<div class="flex justify-between items-start mb-2 gap-2">' +
-                        '<span class="text-[10px] font-semibold px-2 py-0.5 rounded border leading-tight text-left ' + badgeClass + '">' + t.status + '</span>' +
+                        '<div class="flex items-center gap-2">' +
+                            '<span class="text-[10px] font-semibold px-2 py-0.5 rounded border leading-tight text-left ' + badgeClass + '">' + t.status + '</span>' +
+                            resDateTag +
+                        '</div>' +
                         '<span class="text-xs text-slate-400 shrink-0">#' + t.id + '</span>' +
                     '</div>' +
                     '<h3 class="font-semibold text-slate-100 mb-1 flex items-center flex-wrap">' +
@@ -741,12 +751,14 @@
             }
 
             var existingTicket = id ? tickets.find(function(t) { return t.id === id; }) : null;
-            var createdAt = existingTicket ? (existingTicket.createdAt || Date.now()) : Date.now();
-
+            
+            // Set/Update resolution date if newly updated to RESOLVED today
             var resolvedDate = existingTicket ? (existingTicket.resolvedDate || null) : null;
-            if (status === 'RESOLVED' && (!existingTicket || existingTicket.status !== 'RESOLVED')) {
-                resolvedDate = getTodayFormatted();
-            } else if (status !== 'RESOLVED') {
+            if (status === 'RESOLVED') {
+                if (!existingTicket || existingTicket.status !== 'RESOLVED' || !existingTicket.resolvedDate) {
+                    resolvedDate = getTodayFormatted();
+                }
+            } else {
                 resolvedDate = null;
             }
 
@@ -764,7 +776,7 @@
                 status: status,
                 priority: priority,
                 assignee: assignee,
-                createdAt: createdAt,
+                createdAt: existingTicket ? (existingTicket.createdAt || Date.now()) : Date.now(),
                 resolvedDate: resolvedDate
             };
 
