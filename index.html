@@ -24,7 +24,7 @@
     </style>
 </head>
 <body class="p-4 min-h-screen pb-12">
-    <!-- Shared Datalist for End User Name Suggestions -->
+    <!-- Shared Datalist for Main Search Suggestions -->
     <datalist id="end-user-suggestions"></datalist>
 
     <!-- Header -->
@@ -89,9 +89,12 @@
 
             <!-- End User Name & Asset Number -->
             <div class="grid grid-cols-2 gap-2 mb-3">
-                <div>
+                <div class="relative">
                     <label class="block text-xs text-slate-400 mb-1">End User Name</label>
-                    <input type="text" id="t-end-user" list="end-user-suggestions" placeholder="e.g. John Doe" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors" autocomplete="off">
+                    <input type="text" id="t-end-user" onfocus="showCustomSuggestions()" oninput="filterCustomSuggestions()" placeholder="e.g. John Doe" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors" autocomplete="off">
+                    
+                    <!-- Custom Scrollable Dropdown Menu for Mobile Keyboard Safety -->
+                    <div id="custom-suggestions-box" class="hidden absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-lg shadow-xl max-h-40 overflow-y-auto z-50 divide-y divide-slate-800"></div>
                 </div>
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">Asset Number</label>
@@ -275,29 +278,74 @@
 
         let tickets = [];
         let currentTab = 'ALL';
+        let uniqueUserNames = [];
 
         function updateEndUserDatalist() {
             var datalist = document.getElementById('end-user-suggestions');
-            if (!datalist) return;
-            datalist.innerHTML = '';
+            if (datalist) datalist.innerHTML = '';
 
-            // Extract unique non-empty end user names
-            var uniqueNames = [];
+            uniqueUserNames = [];
             tickets.forEach(function(t) {
                 if (t.endUser && t.endUser.trim() !== '') {
                     var trimmed = t.endUser.trim();
-                    if (uniqueNames.indexOf(trimmed) === -1) {
-                        uniqueNames.push(trimmed);
+                    if (uniqueUserNames.indexOf(trimmed) === -1) {
+                        uniqueUserNames.push(trimmed);
                     }
                 }
             });
 
-            uniqueNames.sort().forEach(function(name) {
-                var option = document.createElement('option');
-                option.value = name;
-                datalist.appendChild(option);
-            });
+            uniqueUserNames.sort();
+
+            if (datalist) {
+                uniqueUserNames.forEach(function(name) {
+                    var option = document.createElement('option');
+                    option.value = name;
+                    datalist.appendChild(option);
+                });
+            }
         }
+
+        // Custom Modal Auto-Suggestions Logic
+        function showCustomSuggestions() {
+            filterCustomSuggestions();
+        }
+
+        function filterCustomSuggestions() {
+            var box = document.getElementById('custom-suggestions-box');
+            var val = document.getElementById('t-end-user').value.toLowerCase().trim();
+            box.innerHTML = '';
+
+            var matches = uniqueUserNames.filter(function(name) {
+                return name.toLowerCase().includes(val);
+            });
+
+            if (matches.length === 0) {
+                box.classList.add('hidden');
+                return;
+            }
+
+            matches.forEach(function(name) {
+                var item = document.createElement('div');
+                item.className = 'px-3 py-2 text-xs text-slate-200 hover:bg-indigo-600/40 cursor-pointer transition-colors';
+                item.innerText = name;
+                item.onclick = function() {
+                    document.getElementById('t-end-user').value = name;
+                    box.classList.add('hidden');
+                };
+                box.appendChild(item);
+            });
+
+            box.classList.remove('hidden');
+        }
+
+        // Close suggestions box if tapped outside
+        document.addEventListener('click', function(e) {
+            var box = document.getElementById('custom-suggestions-box');
+            var input = document.getElementById('t-end-user');
+            if (box && !box.contains(e.target) && e.target !== input) {
+                box.classList.add('hidden');
+            }
+        });
 
         function setTab(tab) {
             currentTab = tab;
@@ -501,6 +549,8 @@
 
         function openCreateModal() {
             updateEndUserDatalist();
+            document.getElementById('custom-suggestions-box').classList.add('hidden');
+
             document.getElementById('modal-title').innerText = "Create Ticket";
             document.getElementById('t-id').value = '';
             document.getElementById('t-end-user').value = '';
@@ -530,6 +580,8 @@
 
         function openEditModal(id) {
             updateEndUserDatalist();
+            document.getElementById('custom-suggestions-box').classList.add('hidden');
+
             var t = tickets.find(function(item) { return item.id === id; });
             if (!t) return;
 
