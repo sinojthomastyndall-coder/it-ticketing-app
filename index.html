@@ -24,6 +24,9 @@
     </style>
 </head>
 <body class="p-4 min-h-screen pb-12">
+    <!-- Shared Datalist for End User Name Suggestions -->
+    <datalist id="end-user-suggestions"></datalist>
+
     <!-- Header -->
     <div class="flex items-center justify-between border-b border-slate-700 pb-4 mb-4">
         <div>
@@ -40,10 +43,10 @@
         </div>
     </div>
 
-    <!-- Live Search Bar -->
+    <!-- Live Search Bar with Auto-Suggestions -->
     <div class="mb-4">
         <div class="relative">
-            <input type="text" id="search-user" oninput="render()" placeholder="🔍 Search by End-User Name or Asset Number..." class="w-full bg-slate-800 border border-slate-700 rounded-lg py-2 pl-3 pr-8 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
+            <input type="text" id="search-user" list="end-user-suggestions" oninput="render()" placeholder="🔍 Search by End-User Name or Asset Number..." class="w-full bg-slate-800 border border-slate-700 rounded-lg py-2 pl-3 pr-8 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" autocomplete="off">
             <button onclick="clearSearch()" id="btn-clear-search" class="hidden absolute right-2 top-2 text-slate-400 hover:text-slate-200 text-xs font-bold">✕</button>
         </div>
     </div>
@@ -88,7 +91,7 @@
             <div class="grid grid-cols-2 gap-2 mb-3">
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">End User Name</label>
-                    <input type="text" id="t-end-user" placeholder="e.g. John Doe" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+                    <input type="text" id="t-end-user" list="end-user-suggestions" placeholder="e.g. John Doe" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors" autocomplete="off">
                 </div>
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">Asset Number</label>
@@ -273,6 +276,29 @@
         let tickets = [];
         let currentTab = 'ALL';
 
+        function updateEndUserDatalist() {
+            var datalist = document.getElementById('end-user-suggestions');
+            if (!datalist) return;
+            datalist.innerHTML = '';
+
+            // Extract unique non-empty end user names
+            var uniqueNames = [];
+            tickets.forEach(function(t) {
+                if (t.endUser && t.endUser.trim() !== '') {
+                    var trimmed = t.endUser.trim();
+                    if (uniqueNames.indexOf(trimmed) === -1) {
+                        uniqueNames.push(trimmed);
+                    }
+                }
+            });
+
+            uniqueNames.sort().forEach(function(name) {
+                var option = document.createElement('option');
+                option.value = name;
+                datalist.appendChild(option);
+            });
+        }
+
         function setTab(tab) {
             currentTab = tab;
 
@@ -323,6 +349,7 @@
                 });
             }
             render();
+            updateEndUserDatalist();
         });
 
         function handleBlockChange() {
@@ -473,6 +500,7 @@
         }
 
         function openCreateModal() {
+            updateEndUserDatalist();
             document.getElementById('modal-title').innerText = "Create Ticket";
             document.getElementById('t-id').value = '';
             document.getElementById('t-end-user').value = '';
@@ -501,6 +529,7 @@
         }
 
         function openEditModal(id) {
+            updateEndUserDatalist();
             var t = tickets.find(function(item) { return item.id === id; });
             if (!t) return;
 
