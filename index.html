@@ -10,6 +10,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
+    <!-- Chart.js for Pie Chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
         .modal-animate { transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out; }
@@ -21,6 +24,7 @@
         .tab-btn.active-waiting { border-color: #a855f7; background-color: rgba(168, 85, 247, 0.15); }
         .tab-btn.active-progress { border-color: #3b82f6; background-color: rgba(59, 130, 246, 0.15); }
         .tab-btn.active-resolved { border-color: #10b981; background-color: rgba(16, 185, 129, 0.15); }
+        .tab-btn.active-today { border-color: #06b6d4; background-color: rgba(6, 182, 212, 0.15); }
     </style>
 </head>
 <body class="p-4 min-h-screen pb-12">
@@ -43,7 +47,7 @@
         </div>
     </div>
 
-    <!-- Live Search Bar with Auto-Suggestions -->
+    <!-- Live Search Bar -->
     <div class="mb-4">
         <div class="relative">
             <input type="text" id="search-user" list="end-user-suggestions" oninput="render()" placeholder="🔍 Search by End-User Name or Asset Number..." class="w-full bg-slate-800 border border-slate-700 rounded-lg py-2 pl-3 pr-8 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" autocomplete="off">
@@ -51,27 +55,42 @@
         </div>
     </div>
 
+    <!-- Pie Chart Visualization Section -->
+    <div class="mb-5 bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 shadow-md">
+        <div class="flex justify-between items-center mb-2 px-1">
+            <h2 class="text-xs font-semibold text-slate-300">Ticket Status Overview</h2>
+            <span class="text-[10px] text-slate-400">Realtime Analytics</span>
+        </div>
+        <div class="h-44 w-full flex justify-center items-center">
+            <canvas id="statusPieChart"></canvas>
+        </div>
+    </div>
+
     <!-- Tab Navigation & Status Counts -->
-    <div class="grid grid-cols-5 gap-1.5 mb-6 text-center">
-        <div onclick="setTab('ALL')" id="tab-all" class="tab-btn active-all bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm">
-            <span class="block text-lg font-bold text-slate-200" id="stat-all">0</span>
-            <span class="text-[10px] font-medium text-slate-400">All</span>
+    <div class="grid grid-cols-6 gap-1 mb-6 text-center">
+        <div onclick="setTab('ALL')" id="tab-all" class="tab-btn active-all bg-slate-800 p-1.5 rounded-lg border border-slate-700 shadow-sm">
+            <span class="block text-base font-bold text-slate-200" id="stat-all">0</span>
+            <span class="text-[9px] font-medium text-slate-400">All</span>
         </div>
-        <div onclick="setTab('OPEN')" id="tab-open" class="tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm">
-            <span class="block text-lg font-bold text-amber-400" id="stat-open">0</span>
-            <span class="text-[10px] font-medium text-slate-400">Open</span>
+        <div onclick="setTab('OPEN')" id="tab-open" class="tab-btn bg-slate-800 p-1.5 rounded-lg border border-slate-700 shadow-sm">
+            <span class="block text-base font-bold text-amber-400" id="stat-open">0</span>
+            <span class="text-[9px] font-medium text-slate-400">Open</span>
         </div>
-        <div onclick="setTab('WAITING FOR EMAIL RESPONSE/LICENSE INFORMATION')" id="tab-waiting" class="tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm">
-            <span class="block text-lg font-bold text-purple-400" id="stat-waiting">0</span>
-            <span class="text-[10px] font-medium text-slate-400 leading-tight">Waiting Info</span>
+        <div onclick="setTab('WAITING FOR EMAIL RESPONSE/LICENSE INFORMATION')" id="tab-waiting" class="tab-btn bg-slate-800 p-1.5 rounded-lg border border-slate-700 shadow-sm">
+            <span class="block text-base font-bold text-purple-400" id="stat-waiting">0</span>
+            <span class="text-[9px] font-medium text-slate-400 leading-none">Waiting</span>
         </div>
-        <div onclick="setTab('IN PROGRESS')" id="tab-progress" class="tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm">
-            <span class="block text-lg font-bold text-blue-400" id="stat-progress">0</span>
-            <span class="text-[10px] font-medium text-slate-400">In Progress</span>
+        <div onclick="setTab('IN PROGRESS')" id="tab-progress" class="tab-btn bg-slate-800 p-1.5 rounded-lg border border-slate-700 shadow-sm">
+            <span class="block text-base font-bold text-blue-400" id="stat-progress">0</span>
+            <span class="text-[9px] font-medium text-slate-400 leading-none">In Prog.</span>
         </div>
-        <div onclick="setTab('RESOLVED')" id="tab-resolved" class="tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm">
-            <span class="block text-lg font-bold text-emerald-400" id="stat-resolved">0</span>
-            <span class="text-[10px] font-medium text-slate-400">Resolved</span>
+        <div onclick="setTab('RESOLVED')" id="tab-resolved" class="tab-btn bg-slate-800 p-1.5 rounded-lg border border-slate-700 shadow-sm">
+            <span class="block text-base font-bold text-emerald-400" id="stat-resolved">0</span>
+            <span class="text-[9px] font-medium text-slate-400">Resolved</span>
+        </div>
+        <div onclick="setTab('TODAY_RESOLVED')" id="tab-today" class="tab-btn bg-slate-800 p-1.5 rounded-lg border border-slate-700 shadow-sm">
+            <span class="block text-base font-bold text-cyan-400" id="stat-today">0</span>
+            <span class="text-[9px] font-medium text-slate-400 leading-none">Today's Res.</span>
         </div>
     </div>
 
@@ -93,7 +112,6 @@
                     <label class="block text-xs text-slate-400 mb-1">End User Name</label>
                     <input type="text" id="t-end-user" onfocus="showCustomSuggestions()" oninput="filterCustomSuggestions()" placeholder="e.g. John Doe" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors" autocomplete="off">
                     
-                    <!-- Custom Scrollable Dropdown Menu for Mobile Keyboard Safety -->
                     <div id="custom-suggestions-box" class="hidden absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-lg shadow-xl max-h-40 overflow-y-auto z-50 divide-y divide-slate-800"></div>
                 </div>
                 <div>
@@ -279,6 +297,37 @@
         let tickets = [];
         let currentTab = 'ALL';
         let uniqueUserNames = [];
+        let statusChart = null;
+
+        function getTodayFormatted() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function initPieChart() {
+            const ctx = document.getElementById('statusPieChart').getContext('2d');
+            statusChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Open', 'Waiting Info', 'In Progress', 'Resolved'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: ['#f59e0b', '#a855f7', '#3b82f6', '#10b981'],
+                        borderColor: '#0f172a',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#cbd5e1', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
 
         function updateEndUserDatalist() {
             var datalist = document.getElementById('end-user-suggestions');
@@ -305,7 +354,6 @@
             }
         }
 
-        // Custom Modal Auto-Suggestions Logic
         function showCustomSuggestions() {
             filterCustomSuggestions();
         }
@@ -338,7 +386,6 @@
             box.classList.remove('hidden');
         }
 
-        // Close suggestions box if tapped outside
         document.addEventListener('click', function(e) {
             var box = document.getElementById('custom-suggestions-box');
             var input = document.getElementById('t-end-user');
@@ -350,17 +397,19 @@
         function setTab(tab) {
             currentTab = tab;
 
-            document.getElementById('tab-all').className = 'tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm';
-            document.getElementById('tab-open').className = 'tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm';
-            document.getElementById('tab-waiting').className = 'tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm';
-            document.getElementById('tab-progress').className = 'tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm';
-            document.getElementById('tab-resolved').className = 'tab-btn bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm';
+            document.getElementById('tab-all').className = 'tab-btn bg-slate-800 p-1.5 rounded-lg border border-slate-700 shadow-sm';
+            document.getElementById('tab-open').className = 'tab-btn bg-slate-800 p-1.5 rounded-lg border border-slate-700 shadow-sm';
+            document.getElementById('tab-waiting').className = 'tab-btn bg-slate-800 p-1.5 rounded-lg border border-slate-700 shadow-sm';
+            document.getElementById('tab-progress').className = 'tab-btn bg-slate-800 p-1.5 rounded-lg border border-slate-700 shadow-sm';
+            document.getElementById('tab-resolved').className = 'tab-btn bg-slate-800 p-1.5 rounded-lg border border-slate-700 shadow-sm';
+            document.getElementById('tab-today').className = 'tab-btn bg-slate-800 p-1.5 rounded-lg border border-slate-700 shadow-sm';
 
             if (tab === 'ALL') document.getElementById('tab-all').classList.add('active-all');
             if (tab === 'OPEN') document.getElementById('tab-open').classList.add('active-open');
             if (tab === 'WAITING FOR EMAIL RESPONSE/LICENSE INFORMATION') document.getElementById('tab-waiting').classList.add('active-waiting');
             if (tab === 'IN PROGRESS') document.getElementById('tab-progress').classList.add('active-progress');
             if (tab === 'RESOLVED') document.getElementById('tab-resolved').classList.add('active-resolved');
+            if (tab === 'TODAY_RESOLVED') document.getElementById('tab-today').classList.add('active-today');
 
             render();
         }
@@ -386,6 +435,7 @@
             updateRoomDropdown(50);
         }
         initLocationDropdowns();
+        initPieChart();
 
         // Realtime Listener for Firebase
         ticketsRef.on('value', function(snapshot) {
@@ -396,6 +446,14 @@
                     tickets.push({ id: key, ...data[key] });
                 });
             }
+            
+            // Sort tickets by createdAt descending (Newest on top)
+            tickets.sort(function(a, b) {
+                var timeA = a.createdAt || 0;
+                var timeB = b.createdAt || 0;
+                return timeB - timeA;
+            });
+
             render();
             updateEndUserDatalist();
         });
@@ -432,12 +490,19 @@
                 clearBtn.classList.add('hidden');
             }
 
-            var openCount = 0, waitingCount = 0, progressCount = 0, resolvedCount = 0;
+            var openCount = 0, waitingCount = 0, progressCount = 0, resolvedCount = 0, todayResolvedCount = 0;
+            var todayStr = getTodayFormatted();
+
             tickets.forEach(function(t) {
                 if (t.status === 'OPEN') openCount++;
                 if (t.status === 'WAITING FOR EMAIL RESPONSE/LICENSE INFORMATION') waitingCount++;
                 if (t.status === 'IN PROGRESS') progressCount++;
-                if (t.status === 'RESOLVED') resolvedCount++;
+                if (t.status === 'RESOLVED') {
+                    resolvedCount++;
+                    if (t.resolvedDate === todayStr) {
+                        todayResolvedCount++;
+                    }
+                }
             });
 
             document.getElementById('stat-all').innerText = tickets.length;
@@ -445,10 +510,20 @@
             document.getElementById('stat-waiting').innerText = waitingCount;
             document.getElementById('stat-progress').innerText = progressCount;
             document.getElementById('stat-resolved').innerText = resolvedCount;
+            document.getElementById('stat-today').innerText = todayResolvedCount;
+
+            // Update Chart.js Pie Chart
+            if (statusChart) {
+                statusChart.data.datasets[0].data = [openCount, waitingCount, progressCount, resolvedCount];
+                statusChart.update();
+            }
 
             // Filter tickets based on active Tab and Search Query
             var filteredTickets = tickets.filter(function(t) {
-                var tabMatch = (currentTab === 'ALL') || (t.status === currentTab);
+                var tabMatch = false;
+                if (currentTab === 'ALL') tabMatch = true;
+                else if (currentTab === 'TODAY_RESOLVED') tabMatch = (t.status === 'RESOLVED' && t.resolvedDate === todayStr);
+                else tabMatch = (t.status === currentTab);
 
                 if (!searchQuery) return tabMatch;
                 var endUserMatch = (t.endUser || '').toLowerCase().includes(searchQuery);
@@ -457,7 +532,7 @@
             });
 
             if (filteredTickets.length === 0) {
-                var tabName = currentTab === 'ALL' ? '' : currentTab.toLowerCase() + ' ';
+                var tabName = currentTab === 'ALL' ? '' : (currentTab === 'TODAY_RESOLVED' ? "today's resolved " : currentTab.toLowerCase() + ' ');
                 var msg = searchQuery 
                     ? 'No ' + tabName + 'tickets found matching "' + searchQuery + '".' 
                     : 'No ' + tabName + 'tickets found.';
@@ -665,6 +740,16 @@
                 }
             }
 
+            var existingTicket = id ? tickets.find(function(t) { return t.id === id; }) : null;
+            var createdAt = existingTicket ? (existingTicket.createdAt || Date.now()) : Date.now();
+
+            var resolvedDate = existingTicket ? (existingTicket.resolvedDate || null) : null;
+            if (status === 'RESOLVED' && (!existingTicket || existingTicket.status !== 'RESOLVED')) {
+                resolvedDate = getTodayFormatted();
+            } else if (status !== 'RESOLVED') {
+                resolvedDate = null;
+            }
+
             var ticketData = {
                 endUser: endUser,
                 assetNo: assetNo,
@@ -678,7 +763,9 @@
                 desc: desc,
                 status: status,
                 priority: priority,
-                assignee: assignee
+                assignee: assignee,
+                createdAt: createdAt,
+                resolvedDate: resolvedDate
             };
 
             if (id) {
@@ -705,7 +792,7 @@
                 return;
             }
 
-            var headers = ["Ticket ID", "End User", "Asset Number", "Subject", "Sub Details", "Location", "Description", "Status", "Priority", "Assignee"];
+            var headers = ["Ticket ID", "End User", "Asset Number", "Subject", "Sub Details", "Location", "Description", "Status", "Priority", "Assignee", "Resolved Date"];
             
             var rows = tickets.map(function(t) {
                 var subDetail = t.subOption || '';
@@ -734,7 +821,8 @@
                     '"' + cleanDesc.replace(/"/g, '""') + '"',
                     '"' + t.status + '"',
                     '"' + t.priority + '"',
-                    '"' + (t.assignee || '').replace(/"/g, '""') + '"'
+                    '"' + (t.assignee || 'Sinoj Thomas').replace(/"/g, '""') + '"',
+                    '"' + (t.resolvedDate || '') + '"'
                 ];
             });
 
