@@ -69,14 +69,28 @@
         </div>
     </div>
 
-    <!-- Overview Chart (All Ticket Breakdown) -->
-    <div class="mb-5 bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 shadow-md">
-        <div class="mb-2 px-1">
-            <h2 class="text-xs font-semibold text-slate-200">Overall Ticket Breakdown</h2>
-            <span class="text-[10px] text-slate-400">Live count across all job statuses</span>
+    <!-- Charts Container (Bar Chart + Pie Chart) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+        <!-- Bar Chart: Overall Ticket Breakdown -->
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 shadow-md">
+            <div class="mb-2 px-1">
+                <h2 class="text-xs font-semibold text-slate-200">Overall Ticket Breakdown</h2>
+                <span class="text-[10px] text-slate-400">Live counts across all statuses</span>
+            </div>
+            <div class="h-48 w-full">
+                <canvas id="overviewChart"></canvas>
+            </div>
         </div>
-        <div class="h-48 w-full">
-            <canvas id="overviewChart"></canvas>
+
+        <!-- Pie Chart: Status Distribution -->
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 shadow-md">
+            <div class="mb-2 px-1">
+                <h2 class="text-xs font-semibold text-slate-200">Status Distribution</h2>
+                <span class="text-[10px] text-slate-400">Proportional breakdown of open & active jobs</span>
+            </div>
+            <div class="h-48 w-full flex justify-center items-center">
+                <canvas id="pieChart"></canvas>
+            </div>
         </div>
     </div>
 
@@ -322,6 +336,7 @@
         let currentTab = 'ALL';
         let uniqueUserNames = [];
         let overviewChart = null;
+        let pieChart = null;
         let triggeredReminders = new Set();
 
         function requestNotificationPermission() {
@@ -388,9 +403,10 @@
             return year + '-' + month + '-' + day;
         }
 
-        function initOverviewChart() {
-            const ctx = document.getElementById('overviewChart').getContext('2d');
-            overviewChart = new Chart(ctx, {
+        function initCharts() {
+            // Bar Chart Initialization
+            const ctxBar = document.getElementById('overviewChart').getContext('2d');
+            overviewChart = new Chart(ctxBar, {
                 type: 'bar',
                 data: {
                     labels: ['Total', 'Open', 'Waiting Info', 'In Progress', 'Resolved'],
@@ -410,6 +426,31 @@
                     },
                     plugins: {
                         legend: { display: false }
+                    }
+                }
+            });
+
+            // Pie Chart Initialization
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+            pieChart = new Chart(ctxPie, {
+                type: 'pie',
+                data: {
+                    labels: ['Open', 'Waiting Info', 'In Progress', 'Resolved'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: ['#f59e0b', '#a855f7', '#3b82f6', '#10b981'],
+                        borderWidth: 2,
+                        borderColor: '#1e293b'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#cbd5e1', font: { size: 10 }, boxWidth: 12 }
+                        }
                     }
                 }
             });
@@ -514,7 +555,7 @@
             updateRoomDropdown(50);
         }
         initLocationDropdowns();
-        initOverviewChart();
+        initCharts();
 
         // Realtime Listener for Firebase
         ticketsRef.on('value', function(snapshot) {
@@ -594,6 +635,11 @@
             if (overviewChart) {
                 overviewChart.data.datasets[0].data = [tickets.length, openCount, waitingCount, progressCount, resolvedCount];
                 overviewChart.update();
+            }
+
+            if (pieChart) {
+                pieChart.data.datasets[0].data = [openCount, waitingCount, progressCount, resolvedCount];
+                pieChart.update();
             }
 
             var filteredTickets = tickets.filter(function(t) {
