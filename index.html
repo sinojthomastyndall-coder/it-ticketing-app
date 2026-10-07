@@ -154,6 +154,12 @@
                 </div>
             </div>
 
+            <!-- End User Email -->
+            <div class="mb-3">
+                <label class="block text-xs text-slate-400 mb-1">End User Email</label>
+                <input type="email" id="t-end-user-email" placeholder="e.g. user@tyndall.ie" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+            </div>
+
             <!-- Subject Dropdown -->
             <label class="block text-xs text-slate-400 mb-1">Subject</label>
             <select id="t-subject" onchange="handleSubjectChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-slate-200 mb-3 focus:outline-none focus:border-indigo-500 transition-colors">
@@ -278,7 +284,13 @@
                 <label class="text-xs text-slate-400">Description</label>
                 <button type="button" onclick="addBulletPoint()" class="text-[11px] text-indigo-400 hover:text-indigo-300 font-medium">+ Add Bullet</button>
             </div>
-            <textarea id="t-desc" rows="4" placeholder="Enter details..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-slate-200 mb-3 focus:outline-none focus:border-indigo-500 transition-colors"></textarea>
+            <textarea id="t-desc" rows="3" placeholder="Enter details..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-slate-200 mb-3 focus:outline-none focus:border-indigo-500 transition-colors"></textarea>
+
+            <!-- Resolution Taken -->
+            <div id="wrapper-resolution" class="mb-3">
+                <label class="block text-xs text-emerald-400 font-semibold mb-1">Resolution Summary</label>
+                <textarea id="t-resolution" rows="3" placeholder="Describe the steps taken to resolve this ticket..." class="w-full bg-slate-900 border border-emerald-500/40 rounded-lg p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 transition-colors"></textarea>
+            </div>
 
             <!-- Status and Priority -->
             <div class="grid grid-cols-2 gap-3 mb-3">
@@ -641,6 +653,8 @@
                     .map(function(line) { return '<div class="text-xs text-slate-300">' + line + '</div>'; })
                     .join('');
 
+                var resolutionBlock = t.resolution ? '<div class="mt-2 p-2 bg-emerald-950/30 border border-emerald-500/30 rounded text-xs text-emerald-200"><strong>Resolution:</strong> ' + t.resolution + '</div>' : '';
+
                 var subDetail = t.subOption || '';
                 if (t.deskItems && t.deskItems.length > 0) {
                     subDetail = t.deskItems.map(function(i) { return i.name + ': ' + i.qty; }).join(', ');
@@ -683,6 +697,7 @@
                     endUserStr +
                     '<p class="text-[11px] text-slate-400 mb-2">📍 Location: <span class="text-slate-300">' + locationStr + '</span></p>' +
                     '<div class="space-y-0.5 mb-2">' + formattedDesc + '</div>' +
+                    resolutionBlock +
                     reminderBadge +
                     '<div class="flex justify-between items-center text-xs text-slate-400 pt-2 mt-2 border-t border-slate-700/50">' +
                         '<span>Assignee: <strong class="text-slate-200">' + (t.assignee || 'Sinoj Thomas') + '</strong></span>' +
@@ -748,6 +763,7 @@
             document.getElementById('modal-title').innerText = "Create Ticket";
             document.getElementById('t-id').value = '';
             document.getElementById('t-end-user').value = '';
+            document.getElementById('t-end-user-email').value = '';
             document.getElementById('t-asset-no').value = '';
             document.getElementById('t-subject').value = 'Software Installation';
             
@@ -760,6 +776,7 @@
 
             document.getElementById('t-reminder').value = '';
             document.getElementById('t-desc').value = '• ';
+            document.getElementById('t-resolution').value = '';
             document.getElementById('t-status').value = 'OPEN';
             document.getElementById('t-priority').value = 'Medium';
             document.getElementById('t-assignee').value = 'Sinoj Thomas';
@@ -781,6 +798,7 @@
             document.getElementById('modal-title').innerText = "Edit Ticket #" + t.id;
             document.getElementById('t-id').value = t.id;
             document.getElementById('t-end-user').value = t.endUser || '';
+            document.getElementById('t-end-user-email').value = t.endUserEmail || '';
             document.getElementById('t-asset-no').value = t.assetNo || '';
             document.getElementById('t-subject').value = t.subject;
             
@@ -805,6 +823,7 @@
 
             document.getElementById('t-reminder').value = t.reminderTime || '';
             document.getElementById('t-desc').value = t.desc || '';
+            document.getElementById('t-resolution').value = t.resolution || '';
             document.getElementById('t-status').value = t.status;
             document.getElementById('t-priority').value = t.priority;
             document.getElementById('t-assignee').value = t.assignee || 'Sinoj Thomas';
@@ -813,9 +832,27 @@
             showModal();
         }
 
+        function sendResolutionEmail(ticketId, endUser, endUserEmail, subject, resolution) {
+            var recipient = endUserEmail || '';
+            var emailSubject = encodeURIComponent("IT Support - Ticket Closed: #" + ticketId + " (" + subject + ")");
+            var bodyText = "Hello " + (endUser || "User") + ",\n\n" +
+                "Your IT support ticket #" + ticketId + " (" + subject + ") has been marked as RESOLVED.\n\n" +
+                "--------------------------------------------------\n" +
+                "Resolution Details:\n" +
+                (resolution || "No explicit resolution summary recorded.") + "\n" +
+                "--------------------------------------------------\n\n" +
+                "Kind regards,\n" +
+                "Sinoj Thomas\n" +
+                "IT Support | Tyndall National Institute";
+
+            var mailtoUrl = "mailto:" + recipient + "?subject=" + emailSubject + "&body=" + encodeURIComponent(bodyText);
+            window.location.href = mailtoUrl;
+        }
+
         function saveTicket() {
             var id = document.getElementById('t-id').value;
             var endUser = document.getElementById('t-end-user').value.trim();
+            var endUserEmail = document.getElementById('t-end-user-email').value.trim();
             var assetNo = document.getElementById('t-asset-no').value.trim();
             var subject = document.getElementById('t-subject').value;
             
@@ -826,6 +863,7 @@
 
             var reminderTime = document.getElementById('t-reminder').value;
             var desc = document.getElementById('t-desc').value.trim();
+            var resolution = document.getElementById('t-resolution').value.trim();
             var status = document.getElementById('t-status').value;
             var priority = document.getElementById('t-priority').value;
             var assignee = document.getElementById('t-assignee').value.trim() || 'Sinoj Thomas';
@@ -854,17 +892,22 @@
 
             var existingTicket = id ? tickets.find(function(t) { return t.id === id; }) : null;
             var resolvedDate = existingTicket ? (existingTicket.resolvedDate || null) : null;
+            var isNewlyResolved = false;
 
             if (status === 'RESOLVED') {
                 if (!existingTicket || existingTicket.status !== 'RESOLVED' || !existingTicket.resolvedDate) {
                     resolvedDate = getTodayFormatted();
+                    isNewlyResolved = true;
                 }
             } else {
                 resolvedDate = null;
             }
 
+            var ticketKey = id || ('TK-' + Math.floor(1000 + Math.random() * 9000));
+
             var ticketData = {
                 endUser: endUser,
+                endUserEmail: endUserEmail,
                 assetNo: assetNo,
                 subject: subject,
                 subOption: subOption,
@@ -875,6 +918,7 @@
                 locSeat: locSeat,
                 reminderTime: reminderTime,
                 desc: desc,
+                resolution: resolution,
                 status: status,
                 priority: priority,
                 assignee: assignee,
@@ -885,8 +929,12 @@
             if (id) {
                 db.ref('tickets/' + id).update(ticketData);
             } else {
-                var newKey = 'TK-' + Math.floor(1000 + Math.random() * 9000);
-                db.ref('tickets/' + newKey).set(ticketData);
+                db.ref('tickets/' + ticketKey).set(ticketData);
+            }
+
+            // Trigger resolution email draft if ticket is newly set to RESOLVED
+            if (isNewlyResolved) {
+                sendResolutionEmail(ticketKey, endUser, endUserEmail, subject, resolution);
             }
 
             closeModal();
@@ -906,7 +954,7 @@
                 return;
             }
 
-            var headers = ["Ticket ID", "End User", "Asset Number", "Subject", "Sub Details", "Location", "Target Time", "Description", "Status", "Priority", "Assignee", "Resolved Date"];
+            var headers = ["Ticket ID", "End User", "End User Email", "Asset Number", "Subject", "Sub Details", "Location", "Target Time", "Description", "Resolution", "Status", "Priority", "Assignee", "Resolved Date"];
             
             var rows = tickets.map(function(t) {
                 var subDetail = t.subOption || '';
@@ -924,16 +972,19 @@
                 }
 
                 var cleanDesc = (t.desc || '').replace(/\r?\n|\r/g, ' ');
+                var cleanRes = (t.resolution || '').replace(/\r?\n|\r/g, ' ');
 
                 return [
                     '"' + t.id + '"',
                     '"' + (t.endUser || '').replace(/"/g, '""') + '"',
+                    '"' + (t.endUserEmail || '').replace(/"/g, '""') + '"',
                     '"' + (t.assetNo || '').replace(/"/g, '""') + '"',
                     '"' + (t.subject || '').replace(/"/g, '""') + '"',
                     '"' + subDetail.replace(/"/g, '""') + '"',
                     '"' + locationStr.replace(/"/g, '""') + '"',
                     '"' + (t.reminderTime || '') + '"',
                     '"' + cleanDesc.replace(/"/g, '""') + '"',
+                    '"' + cleanRes.replace(/"/g, '""') + '"',
                     '"' + t.status + '"',
                     '"' + t.priority + '"',
                     '"' + (t.assignee || 'Sinoj Thomas').replace(/"/g, '""') + '"',
