@@ -13,6 +13,12 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- Google Gen AI SDK -->
+    <script type="module">
+      import { GoogleGenAI } from "https://cdn.jsdelivr.net/npm/@google/genai@2.27.0/+esm";
+      window.GoogleGenAI = GoogleGenAI;
+    </script>
+
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
         
@@ -42,7 +48,7 @@
 </head>
 <body class="p-4 min-h-screen pb-12">
 
-    <!-- Header (Notification Button Removed) -->
+    <!-- Header -->
     <div class="flex items-center justify-between border-b border-slate-700 pb-4 mb-4">
         <div>
             <h1 class="text-2xl font-bold text-indigo-400">My Jobs To Do</h1>
@@ -66,16 +72,14 @@
         </div>
     </div>
 
-    <!-- Charts Container (Bar Chart + Timeframe Selector & Pie Chart) -->
+    <!-- Charts Container -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-        <!-- Bar Chart: Overall Ticket Breakdown -->
         <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 shadow-md">
             <div class="flex justify-between items-center mb-2 px-1">
                 <div>
                     <h2 class="text-xs font-semibold text-slate-200">Overall Ticket Breakdown</h2>
                     <span class="text-[10px] text-slate-400">Filtered status counts</span>
                 </div>
-                <!-- Timeframe Filter Dropdown -->
                 <select id="chart-timeframe" onchange="render()" class="bg-slate-900 border border-slate-700 text-slate-200 text-[11px] rounded px-2 py-1 focus:outline-none focus:border-indigo-500">
                     <option value="ALL">All Time</option>
                     <option value="DAILY">Daily (Today)</option>
@@ -88,7 +92,6 @@
             </div>
         </div>
 
-        <!-- Pie Chart: Status Distribution -->
         <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 shadow-md">
             <div class="mb-2 px-1">
                 <h2 class="text-xs font-semibold text-slate-200">Status Distribution</h2>
@@ -245,7 +248,6 @@
                         </select>
                     </div>
 
-                    <!-- Block A Section -->
                     <div id="wrapper-section" class="hidden">
                         <label class="block text-[11px] text-indigo-400 mb-1 font-semibold">Block A Section</label>
                         <select id="loc-section" class="w-full bg-slate-900 border border-indigo-500/50 rounded-lg p-1.5 text-xs text-slate-200 focus:outline-none">
@@ -283,6 +285,26 @@
                 <button type="button" onclick="addBulletPoint()" class="text-[11px] text-indigo-400 hover:text-indigo-300 font-medium">+ Add Bullet</button>
             </div>
             <textarea id="t-desc" rows="4" placeholder="Enter details..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-slate-200 mb-3 focus:outline-none focus:border-indigo-500 transition-colors"></textarea>
+
+            <!-- AI Resolution Helper Block -->
+            <div class="mb-4 bg-indigo-950/30 border border-indigo-500/30 p-3 rounded-xl">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs font-semibold text-indigo-300 flex items-center gap-1">
+                        ✨ AI Troubleshooting Assistant
+                    </label>
+                    <button type="button" onclick="getAIResolution()" id="btn-ai-generate" class="bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg shadow transition-colors">
+                        🤖 Get Resolution
+                    </button>
+                </div>
+                <div id="ai-response-box" class="hidden text-xs text-slate-300 bg-slate-900/80 p-2.5 rounded-lg border border-slate-700 space-y-2">
+                    <div id="ai-text" class="whitespace-pre-wrap font-sans text-[11px] leading-relaxed"></div>
+                    <div class="pt-2 border-t border-slate-800 flex justify-end">
+                        <button type="button" onclick="copyAIResolution()" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-indigo-300 px-2 py-1 rounded border border-slate-700">
+                            📋 Copy Solution
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <!-- Status and Priority -->
             <div class="grid grid-cols-2 gap-3 mb-3">
@@ -337,11 +359,64 @@
         const db = firebase.database();
         const ticketsRef = db.ref('tickets');
 
+        // Gemini API Key (Replace string with your key from https://aistudio.google.com/)
+        const GEMINI_API_KEY = "AQ.Ab8RN6KtNx3VznEB2Deh37M1duk_o-NE5ZZMUv244lJDPMqeUw";
+
         let tickets = [];
         let currentTab = 'ALL';
         let uniqueUserNames = [];
         let overviewChart = null;
         let pieChart = null;
+
+        async function getAIResolution() {
+            const subject = document.getElementById('t-subject').value;
+            const desc = document.getElementById('t-desc').value.trim();
+            
+            if (!desc || desc === '•') {
+                alert("Please enter a ticket description first so the AI has context to generate a resolution.");
+                return;
+            }
+
+            const btn = document.getElementById('btn-ai-generate');
+            const box = document.getElementById('ai-response-box');
+            const textEl = document.getElementById('ai-text');
+
+            btn.innerText = "⏳ Thinking...";
+            btn.disabled = true;
+            box.classList.remove('hidden');
+            textEl.innerText = "Analyzing ticket details and generating IT resolution steps...";
+
+            try {
+                const ai = new window.GoogleGenAI({ apiKey: GEMINI_API_KEY });
+                const prompt = `You are an expert IT Support Engineer. Provide a clear, concise, step-by-step resolution guide for this support ticket:
+
+Subject: ${subject}
+Description: ${desc}
+
+Provide practical, numbered steps to resolve or troubleshoot this issue. Keep it professional, direct, and formatted for easy reading.`;
+
+                const response = await ai.models.generateContent({
+                    model: "gemini-2.5-flash",
+                    contents: prompt,
+                });
+
+                textEl.innerText = response.text;
+            } catch (err) {
+                console.error("Gemini Error:", err);
+                textEl.innerText = "❌ Error generating response. Please check your API key or network connection.";
+            } finally {
+                btn.innerText = "🤖 Get Resolution";
+                btn.disabled = false;
+            }
+        }
+
+        function copyAIResolution() {
+            const text = document.getElementById('ai-text').innerText;
+            if (text) {
+                navigator.clipboard.writeText(text);
+                alert("Resolution copied to clipboard!");
+            }
+        }
 
         function getTodayFormatted() {
             var d = new Date();
@@ -352,7 +427,6 @@
         }
 
         function initCharts() {
-            // Bar Chart Initialization
             const ctxBar = document.getElementById('overviewChart').getContext('2d');
             overviewChart = new Chart(ctxBar, {
                 type: 'bar',
@@ -378,7 +452,6 @@
                 }
             });
 
-            // Pie Chart Initialization
             const ctxPie = document.getElementById('pieChart').getContext('2d');
             pieChart = new Chart(ctxPie, {
                 type: 'pie',
@@ -505,7 +578,6 @@
         initLocationDropdowns();
         initCharts();
 
-        // Realtime Listener for Firebase
         ticketsRef.on('value', function(snapshot) {
             const data = snapshot.val();
             tickets = [];
@@ -554,7 +626,6 @@
             if (searchQuery) clearBtn.classList.remove('hidden');
             else clearBtn.classList.add('hidden');
 
-            // Handle Bar Chart Timeframe Filtering (Daily, Weekly, Monthly, All)
             var timeframe = document.getElementById('chart-timeframe') ? document.getElementById('chart-timeframe').value : 'ALL';
             var now = new Date();
             
@@ -585,7 +656,6 @@
                 if (t.status === 'RESOLVED') barResolved++;
             });
 
-            // Handle Dashboard Tabs Counting
             var openCount = 0, waitingCount = 0, progressCount = 0, resolvedCount = 0, todayResolvedCount = 0;
             var todayStr = getTodayFormatted();
 
@@ -608,13 +678,11 @@
             document.getElementById('stat-resolved').innerText = resolvedCount;
             document.getElementById('stat-today').innerText = todayResolvedCount;
 
-            // Update Bar Chart with timeframe counts
             if (overviewChart) {
                 overviewChart.data.datasets[0].data = [barTotal, barOpen, barWaiting, barProgress, barResolved];
                 overviewChart.update();
             }
 
-            // Update Pie Chart
             if (pieChart) {
                 pieChart.data.datasets[0].data = [openCount, waitingCount, progressCount, resolvedCount];
                 pieChart.update();
@@ -745,6 +813,8 @@
 
         function closeModal() {
             var modal = document.getElementById('modal');
+            document.getElementById('ai-response-box').classList.add('hidden');
+            document.getElementById('ai-text').innerText = '';
             modal.classList.remove('modal-open');
             modal.classList.add('opacity-0');
             setTimeout(function() { 
