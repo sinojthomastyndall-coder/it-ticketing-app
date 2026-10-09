@@ -216,69 +216,78 @@
         }
 
         // Render Dashboard & Filters
-        function renderDashboard() {
-            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            const sortOrder = document.getElementById('dateSortInput').value;
-            const timeFilter = document.getElementById('timeFilterInput').value;
-            const todayStr = getTodayString();
+// Render Dashboard & Filters
+function renderDashboard() {
+    const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+    const sortOrder = document.getElementById('dateSortInput').value;
+    const timeFilter = document.getElementById('timeFilterInput').value;
+    const todayStr = getTodayString();
 
-            const ticketsList = document.getElementById('ticketsList');
-            ticketsList.innerHTML = '';
+    const ticketsList = document.getElementById('ticketsList');
+    ticketsList.innerHTML = '';
 
-            // Metrics Counters
-            let counts = { all: 0, open: 0, waiting: 0, progress: 0, resolved: 0, today: 0 };
+    // Metrics Counters
+    let counts = { all: 0, open: 0, waiting: 0, progress: 0, resolved: 0, today: 0 };
 
-            // Process Tickets
-            let ticketArray = Object.keys(tickets).map(key => ({ id: key, ...tickets[key] }));
+    // Process Tickets
+    let ticketArray = Object.keys(tickets).map(key => ({ id: key, ...tickets[key] }));
 
-            ticketArray.forEach(t => {
-                const dateVal = t.createdDate || todayStr;
-                const matchesTime = timeFilter === 'all' || 
-                    (timeFilter === 'today' && dateVal === todayStr);
+    ticketArray.forEach(t => {
+        // Fallback for older tickets without createdDate saved
+        const dateVal = t.createdDate || t.date || todayStr;
+        const statusClean = (t.status || '').trim();
 
-                if (matchesTime) {
-                    counts.all++;
-                    if (t.status === 'Open') counts.open++;
-                    if (t.status === 'Waiting for Email Response/License Information') counts.waiting++;
-                    if (t.status === 'In Progress') counts.progress++;
-                    if (t.status === 'Resolved') counts.resolved++;
-                    if (t.status === 'Today\'s Resolved' || (t.status === 'Resolved' && dateVal === todayStr)) counts.today++;
-                }
-            });
+        const matchesTime = timeFilter === 'all' || 
+            (timeFilter === 'today' && dateVal === todayStr);
 
-            // Update UI Counters
-            document.getElementById('cnt-all').innerText = counts.all;
-            document.getElementById('cnt-open').innerText = counts.open;
-            document.getElementById('cnt-waiting').innerText = counts.waiting;
-            document.getElementById('cnt-progress').innerText = counts.progress;
-            document.getElementById('cnt-resolved').innerText = counts.resolved;
-            document.getElementById('cnt-today').innerText = counts.today;
-
-            // Sort Tickets by Created Date
-            ticketArray.sort((a, b) => {
-                const dateA = new Date(a.createdDate || 0);
-                const dateB = new Date(b.createdDate || 0);
-                return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
-            });
-
-            // Filter & Render Ticket Cards
-            ticketArray.forEach(ticket => {
-                const matchesSearch = (ticket.endUser || '').toLowerCase().includes(searchQuery) ||
-                                      (ticket.assetTag || '').toLowerCase().includes(searchQuery) ||
-                                      (ticket.subject || '').toLowerCase().includes(searchQuery);
-
-                const matchesStatus = activeStatusFilter === 'All' || 
-                                     (activeStatusFilter === 'Waiting' && ticket.status.includes('Waiting')) ||
-                                     (activeStatusFilter === 'Today' && (ticket.status.includes('Today') || ticket.createdDate === todayStr)) ||
-                                     ticket.status === activeStatusFilter;
-
-                if (matchesSearch && matchesStatus) {
-                    ticketsList.appendChild(createTicketCard(ticket));
-                }
-            });
-
-            updateCharts(counts);
+        if (matchesTime) {
+            counts.all++;
+            if (statusClean.toLowerCase() === 'open') counts.open++;
+            if (statusClean.toLowerCase().includes('waiting')) counts.waiting++;
+            if (statusClean.toLowerCase() === 'in progress') counts.progress++;
+            if (statusClean.toLowerCase() === 'resolved') counts.resolved++;
+            if (statusClean.toLowerCase().includes("today's") || (statusClean.toLowerCase() === 'resolved' && dateVal === todayStr)) counts.today++;
         }
+    });
+
+    // Update UI Counters
+    document.getElementById('cnt-all').innerText = counts.all;
+    document.getElementById('cnt-open').innerText = counts.open;
+    document.getElementById('cnt-waiting').innerText = counts.waiting;
+    document.getElementById('cnt-progress').innerText = counts.progress;
+    document.getElementById('cnt-resolved').innerText = counts.resolved;
+    document.getElementById('cnt-today').innerText = counts.today;
+
+    // Sort Tickets (Newest/Oldest)
+    ticketArray.sort((a, b) => {
+        const dateA = new Date(a.createdDate || a.date || '2026-01-01');
+        const dateB = new Date(b.createdDate || b.date || '2026-01-01');
+        return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+
+    // Filter & Render Ticket Cards
+    ticketArray.forEach(ticket => {
+        const matchesSearch = (ticket.endUser || '').toLowerCase().includes(searchQuery) ||
+                              (ticket.assetTag || '').toLowerCase().includes(searchQuery) ||
+                              (ticket.subject || '').toLowerCase().includes(searchQuery);
+
+        const statusClean = (ticket.status || '').trim().toLowerCase();
+        const activeFilterClean = activeStatusFilter.toLowerCase();
+
+        let matchesStatus = activeFilterClean === 'all';
+        if (activeFilterClean === 'open' && statusClean === 'open') matchesStatus = true;
+        if (activeFilterClean === 'waiting' && statusClean.includes('waiting')) matchesStatus = true;
+        if (activeFilterClean === 'in progress' && statusClean === 'in progress') matchesStatus = true;
+        if (activeFilterClean === 'resolved' && statusClean === 'resolved') matchesStatus = true;
+        if (activeFilterClean === 'today' && (statusClean.includes("today's") || (statusClean === 'resolved' && (ticket.createdDate || ticket.date) === todayStr))) matchesStatus = true;
+
+        if (matchesSearch && matchesStatus) {
+            ticketsList.appendChild(createTicketCard(ticket));
+        }
+    });
+
+    updateCharts(counts);
+}
 
         // Dynamic Ticket Card Generator
         function createTicketCard(ticket) {
@@ -297,7 +306,7 @@
                 <div class="flex justify-between items-start">
                     <div class="flex items-center gap-2">
                         <span class="px-2 py-0.5 text-xs font-semibold rounded border ${badgeClass}">${ticket.status}</span>
-                        <span class="text-xs text-slate-400">📅 Created: <strong class="text-slate-200">${ticket.createdDate || 'N/A'}</strong></span>
+                        <span class="text-xs text-slate-400">📅 Created: <strong class="text-slate-200">${ticket.createdDate || ticket.date || 'Not Set'}</strong></span>
                     </div>
                     <span class="text-xs text-slate-500 font-mono">#${ticket.id.slice(-6)}</span>
                 </div>
