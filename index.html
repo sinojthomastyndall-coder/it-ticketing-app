@@ -15,24 +15,24 @@
 
     <style>
        body {
-    background-color: #0f172a;
-    color: #f8fafc;
-    font-family: system-ui, -apple-system, sans-serif;
-    margin: 0;
-    padding: 0;
-}
-     .bg-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: -1;
-    background: linear-gradient(rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.4)), 
-                url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1920') no-repeat center center;
-    background-size: cover;
-    pointer-events: none;
-}
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+       }
+       .bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            background: linear-gradient(rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.4)), 
+                        url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1920') no-repeat center center;
+            background-size: cover;
+            pointer-events: none;
+        }
         .modal-backdrop {
             transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -59,8 +59,6 @@
 </head>
 <body class="p-4 min-h-screen pb-12">
   <div class="bg-container"></div>
-  
-  <!-- Rest of your existing app HTML goes here -->
 
     <!-- Header -->
     <div class="flex items-center justify-between border-b border-slate-700 pb-4 mb-4">
@@ -78,12 +76,16 @@
         </div>
     </div>
 
-    <!-- Live Search Bar -->
-    <div class="mb-4">
-        <div class="relative">
+    <!-- Live Search Bar & Date Sorting -->
+    <div class="flex gap-2 mb-4">
+        <div class="relative flex-1">
             <input type="text" id="search-user" oninput="render()" placeholder="🔍 Search by End-User Name or Asset Number..." class="w-full bg-slate-800 border border-slate-700 rounded-lg py-2 pl-3 pr-8 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" autocomplete="off">
             <button onclick="clearSearch()" id="btn-clear-search" class="hidden absolute right-2 top-2 text-slate-400 hover:text-slate-200 text-xs font-bold">✕</button>
         </div>
+        <select id="sort-order" onchange="render()" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-2 focus:outline-none focus:border-indigo-500">
+            <option value="NEWEST">Sort: Newest First</option>
+            <option value="OLDEST">Sort: Oldest First</option>
+        </select>
     </div>
 
     <!-- Charts Container -->
@@ -174,18 +176,26 @@
                 </div>
             </div>
 
-            <!-- Subject Dropdown -->
-            <label class="block text-xs text-slate-400 mb-1">Subject</label>
-            <select id="t-subject" onchange="handleSubjectChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-slate-200 mb-3 focus:outline-none focus:border-indigo-500 transition-colors">
-                <option value="Software Installation">Software Installation</option>
-                <option value="Faulty Hardware">Faulty Hardware</option>
-                <option value="Login Error">Login Error</option>
-                <option value="PC Intune">PC Intune</option>
-                <option value="Laptop Intune">Laptop Intune</option>
-                <option value="New Laptop">New Laptop</option>
-                <option value="Desk Settings">Desk Settings</option>
-                <option value="Others">Others</option>
-            </select>
+            <!-- Subject & Creation Date/Time Row -->
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Subject</label>
+                    <select id="t-subject" onchange="handleSubjectChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+                        <option value="Software Installation">Software Installation</option>
+                        <option value="Faulty Hardware">Faulty Hardware</option>
+                        <option value="Login Error">Login Error</option>
+                        <option value="PC Intune">PC Intune</option>
+                        <option value="Laptop Intune">Laptop Intune</option>
+                        <option value="New Laptop">New Laptop</option>
+                        <option value="Desk Settings">Desk Settings</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Creation Date & Time</label>
+                    <input type="datetime-local" id="t-created-date" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+                </div>
+            </div>
 
             <!-- Dynamic Sub-field: Laptop Size -->
             <div id="wrapper-laptop-size" class="hidden mb-3">
@@ -373,6 +383,33 @@
             return year + '-' + month + '-' + day;
         }
 
+        function getNowDateTimeFormatted() {
+            var d = new Date();
+            var year = d.getFullYear();
+            var month = ('0' + (d.getMonth() + 1)).slice(-2);
+            var day = ('0' + d.getDate()).slice(-2);
+            var hours = ('0' + d.getHours()).slice(-2);
+            var minutes = ('0' + d.getMinutes()).slice(-2);
+            return year + '-' + month + '-' + day + ' ' + hours + ':' + minutes;
+        }
+
+        function getNowISOForInput() {
+            var d = new Date();
+            var year = d.getFullYear();
+            var month = ('0' + (d.getMonth() + 1)).slice(-2);
+            var day = ('0' + d.getDate()).slice(-2);
+            var hours = ('0' + d.getHours()).slice(-2);
+            var minutes = ('0' + d.getMinutes()).slice(-2);
+            return year + '-' + month + '-' + day + 'T' + hours + ':' + minutes;
+        }
+
+        function formatDateTimeDisplay(dtStr) {
+            if (!dtStr) return getNowDateTimeFormatted();
+            var cleanStr = dtStr.replace('T', ' ');
+            if (cleanStr.length === 10) cleanStr += ' 09:00'; // Add default time if only date exists
+            return cleanStr;
+        }
+
         function initCharts() {
             const ctxBar = document.getElementById('overviewChart').getContext('2d');
             overviewChart = new Chart(ctxBar, {
@@ -525,20 +562,30 @@
         initLocationDropdowns();
         initCharts();
 
+        // Realtime Database Sync & Automatic Migration
         ticketsRef.on('value', function(snapshot) {
             const data = snapshot.val();
             tickets = [];
+            let updates = {};
+            let todayNowStr = getNowDateTimeFormatted();
+
             if (data) {
                 Object.keys(data).forEach(function(key) {
-                    tickets.push({ id: key, ...data[key] });
+                    var ticket = { id: key, ...data[key] };
+                    
+                    // Automatic Migration: Assign today's date & time if missing
+                    if (!ticket.createdDate) {
+                        ticket.createdDate = todayNowStr;
+                        updates['tickets/' + key + '/createdDate'] = todayNowStr;
+                    }
+                    tickets.push(ticket);
                 });
+
+                // Batch update missing creation dates in Firebase
+                if (Object.keys(updates).length > 0) {
+                    db.ref().update(updates);
+                }
             }
-            
-            tickets.sort(function(a, b) {
-                var timeA = a.createdAt || 0;
-                var timeB = b.createdAt || 0;
-                return timeB - timeA;
-            });
 
             render();
             updateEndUserDatalist();
@@ -578,6 +625,7 @@
             container.innerHTML = '';
 
             var searchQuery = document.getElementById('search-user').value.toLowerCase().trim();
+            var sortOrder = document.getElementById('sort-order') ? document.getElementById('sort-order').value : 'NEWEST';
             var clearBtn = document.getElementById('btn-clear-search');
             
             if (searchQuery) clearBtn.classList.remove('hidden');
@@ -586,6 +634,13 @@
             var timeframe = document.getElementById('chart-timeframe') ? document.getElementById('chart-timeframe').value : 'ALL';
             var now = new Date();
             
+            // Sort tickets array by creation date/time
+            tickets.sort(function(a, b) {
+                var timeA = new Date((a.createdDate || '').replace(' ', 'T')).getTime() || (a.createdAt || 0);
+                var timeB = new Date((b.createdDate || '').replace(' ', 'T')).getTime() || (b.createdAt || 0);
+                return sortOrder === 'NEWEST' ? timeB - timeA : timeA - timeB;
+            });
+
             var chartFilteredTickets = tickets.filter(function(t) {
                 if (timeframe === 'ALL') return true;
                 var ticketDate = t.createdAt ? new Date(t.createdAt) : new Date();
@@ -711,6 +766,9 @@
                     reminderBadge = '<div class="mt-2 bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 px-2 py-1 rounded text-[11px] font-medium flex items-center gap-1">⏰ Target Time: ' + dateStr + '</div>';
                 }
 
+                var dateCreatedStr = formatDateTimeDisplay(t.createdDate);
+                var createdTag = '<span class="text-[10px] text-slate-400">📅 Created: <strong class="text-slate-200">' + dateCreatedStr + '</strong></span>';
+
                 var assetTag = t.assetNo ? ' <span class="text-indigo-400 text-[11px] font-normal ml-2">(Asset: ' + t.assetNo + ')</span>' : '';
                 var endUserStr = t.endUser ? '<p class="text-[11px] text-slate-400 mb-0.5">👤 End User: <span class="text-slate-200 font-medium">' + t.endUser + '</span>' + assetTag + '</p>' : (t.assetNo ? '<p class="text-[11px] text-slate-400 mb-0.5">🏷 Asset No: <span class="text-indigo-300 font-medium">' + t.assetNo + '</span></p>' : '');
 
@@ -719,8 +777,9 @@
 
                 var card = '<div onclick="openEditModal(\'' + t.id + '\')" class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm card-transition cursor-pointer hover:border-indigo-500/50 hover:shadow-indigo-500/10 hover:shadow-lg">' +
                     '<div class="flex justify-between items-start mb-2 gap-2">' +
-                        '<div class="flex items-center gap-2">' +
+                        '<div class="flex items-center gap-2 flex-wrap">' +
                             '<span class="text-[10px] font-semibold px-2 py-0.5 rounded border leading-tight text-left ' + badgeClass + '">' + t.status + '</span>' +
+                            createdTag +
                             resDateTag +
                         '</div>' +
                         '<span class="text-xs text-slate-400 shrink-0">#' + t.id + '</span>' +
@@ -799,6 +858,7 @@
             document.getElementById('t-end-user').value = '';
             document.getElementById('t-asset-no').value = '';
             document.getElementById('t-subject').value = 'Software Installation';
+            document.getElementById('t-created-date').value = getNowISOForInput();
             
             document.getElementById('loc-block-floor').value = 'A Block - Ground Floor';
             document.getElementById('loc-section').value = 'Section 1';
@@ -835,6 +895,9 @@
             document.getElementById('t-end-user').value = t.endUser || '';
             document.getElementById('t-asset-no').value = t.assetNo || '';
             document.getElementById('t-subject').value = t.subject;
+            
+            var existingDt = t.createdDate ? t.createdDate.replace(' ', 'T') : getNowISOForInput();
+            document.getElementById('t-created-date').value = existingDt;
             
             resetDeskAccessories();
             handleSubjectChange();
@@ -873,6 +936,9 @@
             var endUser = document.getElementById('t-end-user').value.trim();
             var assetNo = document.getElementById('t-asset-no').value.trim();
             var subject = document.getElementById('t-subject').value;
+            
+            var rawCreatedDt = document.getElementById('t-created-date').value;
+            var createdDate = rawCreatedDt ? rawCreatedDt.replace('T', ' ') : getNowDateTimeFormatted();
             
             var locBlockFloor = document.getElementById('loc-block-floor').value;
             var locSection = locBlockFloor.startsWith('A Block') ? document.getElementById('loc-section').value : '';
@@ -935,6 +1001,7 @@
                 status: status,
                 priority: priority,
                 assignee: assignee,
+                createdDate: createdDate,
                 createdAt: existingTicket ? (existingTicket.createdAt || Date.now()) : Date.now(),
                 resolvedDate: resolvedDate
             };
@@ -963,7 +1030,7 @@
                 return;
             }
 
-            var headers = ["Ticket ID", "End User", "Asset Number", "Subject", "Sub Details", "Location", "Target Time", "Description", "Resolution Summary", "Status", "Priority", "Assignee", "Resolved Date"];
+            var headers = ["Ticket ID", "Created Date & Time", "End User", "Asset Number", "Subject", "Sub Details", "Location", "Target Time", "Description", "Resolution Summary", "Status", "Priority", "Assignee", "Resolved Date"];
             
             var rows = tickets.map(function(t) {
                 var subDetail = t.subOption || '';
@@ -985,6 +1052,7 @@
 
                 return [
                     '"' + t.id + '"',
+                    '"' + formatDateTimeDisplay(t.createdDate) + '"',
                     '"' + (t.endUser || '').replace(/"/g, '""') + '"',
                     '"' + (t.assetNo || '').replace(/"/g, '""') + '"',
                     '"' + (t.subject || '').replace(/"/g, '""') + '"',
